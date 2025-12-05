@@ -3,20 +3,22 @@ import { api } from '../api'
 
 const UndoContext = createContext(null)
 
-const MAX_UNDO_STACK = 20
+const MAX_STACK_SIZE = 20
 const TOAST_DURATION = 5000
 
 export function UndoProvider({ children }) {
   const [undoStack, setUndoStack] = useState([])
+  const [redoStack, setRedoStack] = useState([])
   const [toast, setToast] = useState(null)
   const toastTimeoutRef = useRef(null)
 
-  // Add action to undo stack
+  // Add action to undo stack (clears redo stack)
   const addAction = useCallback((action) => {
     setUndoStack(prev => {
-      const newStack = [action, ...prev].slice(0, MAX_UNDO_STACK)
+      const newStack = [action, ...prev].slice(0, MAX_STACK_SIZE)
       return newStack
     })
+    setRedoStack([]) // Clear redo stack on new action
     
     // Show toast notification
     showToast(action.message || 'Action completed')
@@ -86,7 +88,6 @@ export function UndoProvider({ children }) {
         case 'reschedule_activity':
           // Move back to original date
           if (lastAction.activityId && lastAction.originalDate) {
-            // This requires a date change which is delete + create
             await api.activities.delete(lastAction.activityId)
             await api.activities.create({
               ...lastAction.activityData,
@@ -96,8 +97,6 @@ export function UndoProvider({ children }) {
           break
           
         case 'paste_week':
-          // Delete all pasted activities (would need to track IDs)
-          // For now, this is a no-op - user would need to manually delete
           showToast('Cannot undo paste week - delete activities manually')
           return
           
@@ -105,9 +104,12 @@ export function UndoProvider({ children }) {
           console.warn('Unknown undo action type:', lastAction.type)
       }
       
+      // Add to redo stack
+      setRedoStack(prev => [lastAction, ...prev].slice(0, MAX_STACK_SIZE))
+      
       // Trigger a refresh by dispatching custom event
       window.dispatchEvent(new CustomEvent('undo-complete'))
-      showToast('Undone')
+      showToast('Undone (Ctrl+Shift+Z to redo)')
       
     } catch (error) {
       console.error('Undo failed:', error)
@@ -115,14 +117,90 @@ export function UndoProvider({ children }) {
     }
   }, [undoStack, clearToast, showToast])
 
-  // Check if can undo
+  // Redo last undone action
+  const redo = useCallback(async () => {
+    if (redoStack.length === 0) return
+    
+    const [actionToRedo, ...restStack] = redoStack
+    setRedoStack(restStack)
+    clearToast()
+    
+    try {
+      switch (actionToRedo.type) {
+        case 'create_activity':
+          // Recreate the activity
+          if (actionToRedo.activityData) {
+            const result = await api.activities.create(actionToRedo.activityData)
+            actionToRedo.activityId = result.id // Update with new ID
+          }
+          break
+          
+        case 'create_recurring':
+          // Recreate the recurring series
+          if (actionToRedo.recurringData) {
+            const result = await api.activities.createRecurring(actionToRedo.recurringData)
+            actionToRedo.seriesId = result.series_id
+          }
+          break
+          
+        case 'update_activity':
+          // Re-apply the update
+          if (actionToRedo.activityId && actionToRedo.newData) {
+            await api.activities.update(actionToRedo.activityId, actionToRedo.newData)
+          }
+          break
+          
+        case 'delete_activity':
+          // Re-delete the activity
+          if (actionToRedo.activityId) {
+            await api.activities.delete(actionToRedo.activityId)
+          }
+          break
+          
+        case 'reschedule_activity':
+          // Re-reschedule
+          if (actionToRedo.activityData && actionToRedo.newDate) {
+            await api.activities.delete(actionToRedo.activityId)
+            const result = await api.activities.create({
+              ...actionToRedo.activityData,
+              date: actionToRedo.newDate
+            })
+            actionToRedo.activityId = result.id
+          }
+          break
+          
+        case 'paste_week':
+          showToast('Cannot redo paste week')
+          return
+          
+        default:
+          console.warn('Unknown redo action type:', actionToRedo.type)
+      }
+      
+      // Add back to undo stack
+      setUndoStack(prev => [actionToRedo, ...prev].slice(0, MAX_STACK_SIZE))
+      
+      // Trigger a refresh
+      window.dispatchEvent(new CustomEvent('redo-complete'))
+      showToast('Redone')
+      
+    } catch (error) {
+      console.error('Redo failed:', error)
+      showToast('Redo failed')
+    }
+  }, [redoStack, clearToast, showToast])
+
+  // Check if can undo/redo
   const canUndo = undoStack.length > 0
+  const canRedo = redoStack.length > 0
 
   return (
     <UndoContext.Provider value={{
       addAction,
       undo,
+      redo,
       canUndo,
+      canRedo,
       toast,
       showToast,
       clearToast
@@ -139,7 +217,9 @@ export function useUndo() {
     return {
       addAction: () => {},
       undo: () => {},
+      redo: () => {},
       canUndo: false,
+      canRedo: false,
       toast: null,
       showToast: () => {},
       clearToast: () => {}

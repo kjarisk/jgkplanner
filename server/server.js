@@ -3,6 +3,7 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import session from 'express-session'
 import passport from 'passport'
+import rateLimit from 'express-rate-limit'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -28,6 +29,23 @@ const PORT = process.env.PORT || 3001
 // Initialize database
 await initDatabase()
 
+// Rate limiting configuration
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false
+})
+
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // Limit each IP to 10 auth requests per minute
+  message: { error: 'Too many authentication attempts, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false
+})
+
 // Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -46,6 +64,10 @@ app.use(session({
 }))
 app.use(passport.initialize())
 app.use(passport.session())
+
+// Apply rate limiting to API routes
+app.use('/api/', apiLimiter)
+app.use('/api/auth/', authLimiter)
 
 // API Routes
 app.use('/api/auth', authRoutes)

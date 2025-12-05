@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { formatDate } from '../utils/date'
 
 export default function BottomSheet({ date, activities, trainingTypes, onClose, onAction }) {
   const sheetRef = useRef(null)
@@ -9,16 +10,6 @@ export default function BottomSheet({ date, activities, trainingTypes, onClose, 
   trainingTypes.forEach(type => {
     typeInfo[type.id] = { color: type.color, name: type.name }
   })
-  
-  // Format date
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('no-NO', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    })
-  }
   
   // Handle touch start for drag-to-close
   function handleTouchStart(e) {

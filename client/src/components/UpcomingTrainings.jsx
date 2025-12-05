@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext'
+import { formatDateCompact, getTodayString } from '../utils/date'
 
 export default function UpcomingTrainings({ activities, trainingTypes, trainers, year, onActivityUpdated }) {
   const { canEdit } = useAuth()
@@ -20,7 +21,7 @@ export default function UpcomingTrainings({ activities, trainingTypes, trainers,
   // Filter and sort activities
   const filteredActivities = useMemo(() => {
     const startDate = year === currentYear 
-      ? today.toISOString().split('T')[0]
+      ? getTodayString()
       : `${year}-01-01`
     
     return activities
@@ -51,15 +52,6 @@ export default function UpcomingTrainings({ activities, trainingTypes, trainers,
     })
     return colors
   }, [trainingTypes])
-
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('no-NO', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short'
-    })
-  }
 
   const clearFilters = () => {
     setFilters({ trainer: '', type: '', timeFilter: '' })
@@ -268,7 +260,7 @@ export default function UpcomingTrainings({ activities, trainingTypes, trainers,
                   {/* Date */}
                   <div className="w-24 flex-shrink-0">
                     <span className="text-sm font-medium text-gray-900">
-                      {formatDate(activity.date)}
+                      {formatDateCompact(activity.date)}
                     </span>
                   </div>
                   

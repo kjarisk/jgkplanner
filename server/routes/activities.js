@@ -1,6 +1,7 @@
 import express from 'express'
 import db, { generateId, getCurrentTimestamp } from '../db/init.js'
 import { authenticateToken, canEdit, adminOnly } from '../middleware/auth.js'
+import { validate, createActivitySchema, updateActivitySchema, createRecurringSchema } from '../utils/validation.js'
 
 const router = express.Router()
 
@@ -135,13 +136,9 @@ router.post('/bulk', authenticateToken, canEdit, async (req, res) => {
 })
 
 // Create single activity
-router.post('/', authenticateToken, canEdit, async (req, res) => {
+router.post('/', authenticateToken, canEdit, validate(createActivitySchema), async (req, res) => {
   try {
     const { date, training_type_id, trainer_id, hours, start_time, notes } = req.body
-
-    if (!date || !training_type_id) {
-      return res.status(400).json({ error: 'Date and training type are required' })
-    }
 
     await db.read()
 
@@ -184,15 +181,9 @@ router.post('/', authenticateToken, canEdit, async (req, res) => {
 })
 
 // Create recurring series
-router.post('/recurring', authenticateToken, canEdit, async (req, res) => {
+router.post('/recurring', authenticateToken, canEdit, validate(createRecurringSchema), async (req, res) => {
   try {
     const { training_type_id, trainer_id, hours, start_time, weekdays, start_date, end_date } = req.body
-
-    if (!training_type_id || !weekdays || !start_date || weekdays.length === 0) {
-      return res.status(400).json({ 
-        error: 'Training type, weekdays, and start date are required' 
-      })
-    }
 
     await db.read()
 

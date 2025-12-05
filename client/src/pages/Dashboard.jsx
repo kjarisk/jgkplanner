@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useUndo } from '../context/UndoContext'
 import { api } from '../api'
+import { getWeekStart, toDateString } from '../utils/date'
+import { useMobile } from '../hooks/useMobile'
 import Sidebar from '../components/Sidebar'
 import Calendar from '../components/Calendar'
 import ActivityModal from '../components/ActivityModal'
@@ -10,17 +12,10 @@ import BudgetSummary from '../components/BudgetSummary'
 import UpcomingTrainings from '../components/UpcomingTrainings'
 import BottomSheet from '../components/BottomSheet'
 
-// Get the start of a week (Sunday)
-function getWeekStart(date) {
-  const d = new Date(date)
-  const day = d.getDay()
-  d.setDate(d.getDate() - day)
-  return d
-}
-
 export default function Dashboard() {
   const { user, isAdmin, canEdit } = useAuth()
-  const { addAction, toast, clearToast, undo } = useUndo()
+  const { addAction, toast, clearToast, undo, redo } = useUndo()
+  const isMobile = useMobile()
   
   const [year, setYear] = useState(new Date().getFullYear())
   const [activities, setActivities] = useState([])
@@ -41,9 +36,6 @@ export default function Dashboard() {
   const [copiedWeek, setCopiedWeek] = useState(null)
   const [pasteConfirmDialog, setPasteConfirmDialog] = useState(null)
   
-  // Mobile detection
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  
   // Bottom sheet state (for mobile)
   const [bottomSheet, setBottomSheet] = useState({ open: false, date: null, activities: [] })
   
@@ -58,15 +50,6 @@ export default function Dashboard() {
   const [typeModal, setTypeModal] = useState({ open: false, type: null })
   const [showBudget, setShowBudget] = useState(false)
 
-  // Handle resize for mobile detection
-  useEffect(() => {
-    function handleResize() {
-      setIsMobile(window.innerWidth < 768)
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
   // Keyboard navigation
   useEffect(() => {
     function handleKeyDown(e) {
@@ -77,6 +60,13 @@ export default function Dashboard() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
         undo()
+        return
+      }
+      
+      // Redo: Ctrl+Shift+Z or Ctrl+Y
+      if ((e.ctrlKey || e.metaKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) {
+        e.preventDefault()
+        redo()
         return
       }
       

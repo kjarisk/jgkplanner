@@ -48,7 +48,11 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(data)
     }),
-    delete: (id) => fetchApi(`/trainers/${id}`, { method: 'DELETE' })
+    delete: (id) => fetchApi(`/trainers/${id}`, { method: 'DELETE' }),
+    linkUser: (trainerId, userId) => fetchApi(`/trainers/${trainerId}/link`, {
+      method: 'PATCH',
+      body: JSON.stringify({ user_id: userId })
+    })
   },
 
   types: {

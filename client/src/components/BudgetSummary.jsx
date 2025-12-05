@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api'
+import { getTodayString } from '../utils/date'
+import { formatCurrency } from '../utils/format'
 
 export default function BudgetSummary({ year, onClose }) {
   const [loading, setLoading] = useState(true)
@@ -16,7 +18,7 @@ export default function BudgetSummary({ year, onClose }) {
   const [incomeForm, setIncomeForm] = useState({
     amount: '',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayString(),
     activity_id: ''
   })
   const [savingIncome, setSavingIncome] = useState(false)
@@ -81,7 +83,7 @@ export default function BudgetSummary({ year, onClose }) {
       setIncomeForm({
         amount: '',
         description: '',
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayString(),
         activity_id: ''
       })
       setShowIncomeForm(false)
@@ -102,15 +104,6 @@ export default function BudgetSummary({ year, onClose }) {
     } catch (error) {
       console.error('Failed to delete income:', error)
     }
-  }
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('no-NO', {
-      style: 'currency',
-      currency: 'NOK',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value || 0)
   }
 
   // Calculate remaining budget

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { api } from '../api'
+import { formatDate, toDateString } from '../utils/date'
 
 const WEEKDAYS = [
   { value: 0, label: 'Sunday' },
@@ -297,15 +298,6 @@ export default function ActivityModal({
     })
     setCurrentDate(act.date)
     setMode('edit')
-  }
-
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('no-NO', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    })
   }
 
   return (
