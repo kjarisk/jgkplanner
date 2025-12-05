@@ -250,45 +250,79 @@ export default function Calendar({ year, activities, trainingTypes, onCellClick,
         </table>
       </div>
       
+      {/* Context Menu Backdrop */}
+      {contextMenu && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={closeContextMenu}
+        />
+      )}
+      
       {/* Context Menu */}
       {contextMenu && (
         <div
-          className="fixed bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[160px]"
+          className="fixed bg-white rounded-lg shadow-lg border border-gray-200 z-50 min-w-[220px] overflow-hidden"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            onClick={() => {
-              onAddActivity(contextMenu.date)
-              closeContextMenu()
-            }}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-          >
-            <span className="text-teal-600">+</span> Add Activity
-          </button>
-          {contextMenu.activities.length > 0 && (
-            <>
-              <div className="border-t border-gray-200 my-1" />
-              <div className="px-4 py-1 text-xs text-gray-500">
-                {contextMenu.activities.length} activity(s) on this day
-              </div>
-              {contextMenu.activities.map((activity, i) => (
-                <button
-                  key={activity.id}
-                  onClick={() => {
-                    handleCellClick(contextMenu.date, contextMenu.activities, i)
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-                >
-                  <span 
-                    className="w-3 h-3 rounded"
-                    style={{ backgroundColor: typeColors[activity.training_type_id] }}
-                  />
-                  {activity.type_name}
-                </button>
-              ))}
-            </>
-          )}
+          {/* Date Header */}
+          <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">
+              {new Date(contextMenu.date).toLocaleDateString('no-NO', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })}
+            </span>
+            <button 
+              onClick={closeContextMenu}
+              className="text-gray-400 hover:text-gray-600 ml-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <div className="py-1">
+            <button
+              onClick={() => {
+                onAddActivity(contextMenu.date)
+                closeContextMenu()
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+            >
+              <span className="text-teal-600 font-bold">+</span>
+              <span>Create Activity</span>
+            </button>
+            {contextMenu.activities.length > 0 && (
+              <>
+                <div className="border-t border-gray-200 my-1" />
+                <div className="px-4 py-1 text-xs text-gray-500">
+                  {contextMenu.activities.length} activity(s) on this day
+                </div>
+                {contextMenu.activities.map((activity, i) => (
+                  <button
+                    key={activity.id}
+                    onClick={() => {
+                      handleCellClick(contextMenu.date, contextMenu.activities, i)
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+                  >
+                    <span 
+                      className="w-3 h-3 rounded flex-shrink-0"
+                      style={{ backgroundColor: typeColors[activity.training_type_id] }}
+                    />
+                    <span className="flex-1">{activity.type_name}</span>
+                    {activity.start_time && (
+                      <span className="text-xs text-gray-500">{activity.start_time}</span>
+                    )}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
         </div>
       )}
       

@@ -6,6 +6,7 @@ import Calendar from '../components/Calendar'
 import ActivityModal from '../components/ActivityModal'
 import TrainingTypeModal from '../components/TrainingTypeModal'
 import BudgetSummary from '../components/BudgetSummary'
+import UpcomingTrainings from '../components/UpcomingTrainings'
 
 export default function Dashboard() {
   const { user, isAdmin, canEdit } = useAuth()
@@ -145,14 +146,24 @@ export default function Dashboard() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
             </div>
           ) : (
-            <Calendar
-              year={year}
-              activities={activities}
-              trainingTypes={trainingTypes}
-              onCellClick={handleCellClick}
-              onAddActivity={handleAddActivity}
-              canEdit={canEdit}
-            />
+            <>
+              <Calendar
+                year={year}
+                activities={activities}
+                trainingTypes={trainingTypes}
+                onCellClick={handleCellClick}
+                onAddActivity={handleAddActivity}
+                canEdit={canEdit}
+              />
+              
+              {/* Upcoming Trainings List */}
+              <UpcomingTrainings
+                activities={activities}
+                trainingTypes={trainingTypes}
+                trainers={trainers}
+                year={year}
+              />
+            </>
           )}
         </div>
       </main>
