@@ -97,6 +97,14 @@
       "default_trainer_id": "d16fb858-4ae1-48f7-883f-6aaf155958b1",
       "default_hours": 2,
       "created_at": "2025-12-05T12:00:53.143Z"
+    },
+    {
+      "id": "ferie-2026-type",
+      "name": "Ferie",
+      "color": "#F97316",
+      "default_trainer_id": null,
+      "default_hours": 0,
+      "created_at": "2025-12-05T14:00:00.000Z"
     }
   ],
   "recurring_series": [
@@ -472,6 +480,138 @@
       "is_deleted": false,
       "notes": null,
       "created_at": "2025-12-05T12:54:06.402Z"
+    },
+    {
+      "id": "ferie-2026-01",
+      "date": "2026-01-01",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "Nyttarsdag",
+      "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "ferie-2026-02",
+      "date": "2026-04-02",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "Skjaertorsdag",
+      "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "ferie-2026-03",
+      "date": "2026-04-03",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "Langfredag",
+      "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "ferie-2026-04",
+      "date": "2026-04-05",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "1. paskedag",
+      "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "ferie-2026-05",
+      "date": "2026-04-06",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "2. paskedag",
+      "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "ferie-2026-06",
+      "date": "2026-05-01",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "Arbeidernes dag",
+      "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "ferie-2026-07",
+      "date": "2026-05-14",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "Kristi himmelfartsdag",
+      "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "ferie-2026-08",
+      "date": "2026-05-17",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "Grunnlovsdagen",
+      "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "ferie-2026-09",
+      "date": "2026-05-24",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "1. pinsedag",
+      "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "ferie-2026-10",
+      "date": "2026-05-25",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "2. pinsedag",
+      "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "ferie-2026-11",
+      "date": "2026-12-25",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "1. juledag",
+      "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "ferie-2026-12",
+      "date": "2026-12-26",
+      "training_type_id": "ferie-2026-type",
+      "trainer_id": null,
+      "hours": 0,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": "2. juledag",
+      "created_at": "2025-12-05T14:00:00.000Z"
     }
   ],
   "notifications": []
