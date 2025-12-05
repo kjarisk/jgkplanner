@@ -16,7 +16,13 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   
   // Modal states
-  const [activityModal, setActivityModal] = useState({ open: false, date: null, activity: null })
+  const [activityModal, setActivityModal] = useState({ 
+    open: false, 
+    date: null, 
+    activity: null,
+    activities: [],
+    mode: 'add' // 'add', 'edit', 'list'
+  })
   const [typeModal, setTypeModal] = useState({ open: false, type: null })
   const [showBudget, setShowBudget] = useState(false)
 
@@ -42,18 +48,54 @@ export default function Dashboard() {
     }
   }
 
-  function handleCellClick(date) {
+  // Handle cell click - can receive specific activity or list of activities
+  function handleCellClick(date, activity = null, dayActivities = []) {
     if (!canEdit) return
-    const dateActivities = activities.filter(a => a.date === date)
-    if (dateActivities.length === 1) {
-      setActivityModal({ open: true, date, activity: dateActivities[0] })
+    
+    if (activity) {
+      // Clicked on specific activity - edit mode
+      setActivityModal({ 
+        open: true, 
+        date, 
+        activity,
+        activities: dayActivities.length > 0 ? dayActivities : activities.filter(a => a.date === date),
+        mode: 'edit'
+      })
+    } else if (dayActivities.length > 0) {
+      // Has activities on this day - show list
+      setActivityModal({ 
+        open: true, 
+        date, 
+        activity: null,
+        activities: dayActivities,
+        mode: 'list'
+      })
     } else {
-      setActivityModal({ open: true, date, activity: null })
+      // No activities - add new
+      setActivityModal({ 
+        open: true, 
+        date, 
+        activity: null,
+        activities: [],
+        mode: 'add'
+      })
     }
   }
 
+  // Handle add activity (from right-click menu)
+  function handleAddActivity(date) {
+    if (!canEdit) return
+    setActivityModal({ 
+      open: true, 
+      date, 
+      activity: null,
+      activities: activities.filter(a => a.date === date),
+      mode: 'add'
+    })
+  }
+
   function handleActivitySaved() {
-    setActivityModal({ open: false, date: null, activity: null })
+    setActivityModal({ open: false, date: null, activity: null, activities: [], mode: 'add' })
     loadData()
   }
 
@@ -108,6 +150,7 @@ export default function Dashboard() {
               activities={activities}
               trainingTypes={trainingTypes}
               onCellClick={handleCellClick}
+              onAddActivity={handleAddActivity}
               canEdit={canEdit}
             />
           )}
@@ -119,10 +162,11 @@ export default function Dashboard() {
         <ActivityModal
           date={activityModal.date}
           activity={activityModal.activity}
-          activities={activities.filter(a => a.date === activityModal.date)}
+          activities={activityModal.activities}
+          initialMode={activityModal.mode}
           trainingTypes={trainingTypes}
           trainers={trainers}
-          onClose={() => setActivityModal({ open: false, date: null, activity: null })}
+          onClose={() => setActivityModal({ open: false, date: null, activity: null, activities: [], mode: 'add' })}
           onSaved={handleActivitySaved}
         />
       )}
@@ -147,4 +191,3 @@ export default function Dashboard() {
     </div>
   )
 }
-

@@ -14,32 +14,52 @@ const WEEKDAYS = [
 export default function ActivityModal({ 
   date, 
   activity, 
-  activities,
+  activities = [],
+  initialMode = 'add',
   trainingTypes, 
   trainers, 
   onClose, 
   onSaved 
 }) {
-  const [mode, setMode] = useState(activity ? 'edit' : (activities.length > 0 ? 'list' : 'add'))
+  const [mode, setMode] = useState(initialMode)
   const [selectedActivity, setSelectedActivity] = useState(activity)
   const [isRecurring, setIsRecurring] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [currentDate, setCurrentDate] = useState(date)
   
   const [formData, setFormData] = useState({
     training_type_id: activity?.training_type_id || '',
     trainer_id: activity?.trainer_id || '',
     hours: activity?.hours || '',
+    start_time: activity?.start_time || '',
     notes: activity?.notes || '',
     // Recurring options
     weekdays: [],
     end_date: ''
   })
 
+  // Update form when activity changes
+  useEffect(() => {
+    if (activity) {
+      setFormData({
+        training_type_id: activity.training_type_id || '',
+        trainer_id: activity.trainer_id || '',
+        hours: activity.hours || '',
+        start_time: activity.start_time || '',
+        notes: activity.notes || '',
+        weekdays: [],
+        end_date: ''
+      })
+      setCurrentDate(activity.date || date)
+      setSelectedActivity(activity)
+    }
+  }, [activity, date])
+
   // When training type changes, set defaults
   useEffect(() => {
-    if (formData.training_type_id && !activity) {
-      const type = trainingTypes.find(t => t.id === parseInt(formData.training_type_id))
+    if (formData.training_type_id && !selectedActivity) {
+      const type = trainingTypes.find(t => t.id === formData.training_type_id)
       if (type) {
         setFormData(prev => ({
           ...prev,
@@ -48,7 +68,7 @@ export default function ActivityModal({
         }))
       }
     }
-  }, [formData.training_type_id, trainingTypes, activity])
+  }, [formData.training_type_id, trainingTypes, selectedActivity])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -57,29 +77,48 @@ export default function ActivityModal({
 
     try {
       if (selectedActivity) {
-        // Update existing
-        await api.activities.update(selectedActivity.id, {
+        // Update existing - include date change if applicable
+        const updateData = {
           trainer_id: formData.trainer_id || null,
           hours: parseFloat(formData.hours) || null,
+          start_time: formData.start_time || null,
           notes: formData.notes || null
-        })
+        }
+        
+        // If date changed, we need to handle it differently
+        if (currentDate !== selectedActivity.date) {
+          // Delete old and create new
+          await api.activities.delete(selectedActivity.id)
+          await api.activities.create({
+            date: currentDate,
+            training_type_id: selectedActivity.training_type_id,
+            trainer_id: formData.trainer_id || null,
+            hours: parseFloat(formData.hours) || null,
+            start_time: formData.start_time || null,
+            notes: formData.notes || null
+          })
+        } else {
+          await api.activities.update(selectedActivity.id, updateData)
+        }
       } else if (isRecurring) {
         // Create recurring series
         await api.activities.createRecurring({
           training_type_id: formData.training_type_id,
           trainer_id: formData.trainer_id || null,
           hours: parseFloat(formData.hours) || null,
+          start_time: formData.start_time || null,
           weekdays: formData.weekdays,
-          start_date: date,
+          start_date: currentDate,
           end_date: formData.end_date || null
         })
       } else {
         // Create single activity
         await api.activities.create({
-          date,
+          date: currentDate,
           training_type_id: formData.training_type_id,
           trainer_id: formData.trainer_id || null,
           hours: parseFloat(formData.hours) || null,
+          start_time: formData.start_time || null,
           notes: formData.notes || null
         })
       }
@@ -128,6 +167,36 @@ export default function ActivityModal({
     }))
   }
 
+  function switchToAddMode() {
+    setSelectedActivity(null)
+    setFormData({
+      training_type_id: '',
+      trainer_id: '',
+      hours: '',
+      start_time: '',
+      notes: '',
+      weekdays: [],
+      end_date: ''
+    })
+    setIsRecurring(false)
+    setMode('add')
+  }
+
+  function selectActivityToEdit(act) {
+    setSelectedActivity(act)
+    setFormData({
+      training_type_id: act.training_type_id,
+      trainer_id: act.trainer_id || '',
+      hours: act.hours || '',
+      start_time: act.start_time || '',
+      notes: act.notes || '',
+      weekdays: [],
+      end_date: ''
+    })
+    setCurrentDate(act.date)
+    setMode('edit')
+  }
+
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('no-NO', { 
       weekday: 'long', 
@@ -143,18 +212,13 @@ export default function ActivityModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">
-            {mode === 'list' ? 'Activities' : (selectedActivity ? 'Edit Activity' : 'Add Activity')}
+            {mode === 'list' ? 'Activities' : (mode === 'edit' ? 'Edit Activity' : 'Add Activity')}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-        </div>
-
-        {/* Date Display */}
-        <div className="px-6 py-3 bg-gray-50 text-sm text-gray-600">
-          {formatDate(date)}
         </div>
 
         {/* Content */}
@@ -168,21 +232,15 @@ export default function ActivityModal({
           {/* List Mode - show existing activities */}
           {mode === 'list' && (
             <div className="space-y-3">
+              {/* Date Display */}
+              <div className="pb-3 text-sm text-gray-600 border-b border-gray-200">
+                {formatDate(date)}
+              </div>
+              
               {activities.map(a => (
                 <div
                   key={a.id}
-                  onClick={() => {
-                    setSelectedActivity(a)
-                    setFormData({
-                      training_type_id: a.training_type_id,
-                      trainer_id: a.trainer_id || '',
-                      hours: a.hours || '',
-                      notes: a.notes || '',
-                      weekdays: [],
-                      end_date: ''
-                    })
-                    setMode('edit')
-                  }}
+                  onClick={() => selectActivityToEdit(a)}
                   className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
                 >
                   <div
@@ -192,6 +250,8 @@ export default function ActivityModal({
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{a.type_name}</p>
                     <p className="text-sm text-gray-500">
+                      {a.start_time && <span className="font-medium">{a.start_time}</span>}
+                      {a.start_time && ' - '}
                       {a.trainer_name || 'No trainer'} - {a.hours}h
                       {a.series_id && ' (recurring)'}
                     </p>
@@ -199,18 +259,7 @@ export default function ActivityModal({
                 </div>
               ))}
               <button
-                onClick={() => {
-                  setSelectedActivity(null)
-                  setFormData({
-                    training_type_id: '',
-                    trainer_id: '',
-                    hours: '',
-                    notes: '',
-                    weekdays: [],
-                    end_date: ''
-                  })
-                  setMode('add')
-                }}
+                onClick={switchToAddMode}
                 className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-teal-400 hover:text-teal-600"
               >
                 + Add another activity
@@ -221,6 +270,19 @@ export default function ActivityModal({
           {/* Add/Edit Form */}
           {(mode === 'add' || mode === 'edit') && (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Date (editable in edit mode) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date {selectedActivity && <span className="text-gray-400">(can be changed)</span>}
+                </label>
+                <input
+                  type="date"
+                  value={currentDate}
+                  onChange={(e) => setCurrentDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                />
+              </div>
+
               {/* Training Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -231,7 +293,7 @@ export default function ActivityModal({
                   onChange={(e) => setFormData({ ...formData, training_type_id: e.target.value })}
                   disabled={!!selectedActivity}
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100"
                 >
                   <option value="">Select type...</option>
                   {trainingTypes.map(type => (
@@ -243,7 +305,7 @@ export default function ActivityModal({
               {/* Trainer Override */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Trainer (override)
+                  Trainer {!selectedActivity && '(override)'}
                 </label>
                 <select
                   value={formData.trainer_id}
@@ -257,20 +319,33 @@ export default function ActivityModal({
                 </select>
               </div>
 
-              {/* Hours Override */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hours (override)
-                </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0.5"
-                  value={formData.hours}
-                  onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
-                  placeholder="Use default"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                />
+              {/* Hours and Start Time */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Hours {!selectedActivity && '(override)'}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    value={formData.hours}
+                    onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                    placeholder="Use default"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    value={formData.start_time}
+                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
               </div>
 
               {/* Notes */}
@@ -333,7 +408,7 @@ export default function ActivityModal({
                           type="date"
                           value={formData.end_date}
                           onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                          min={date}
+                          min={currentDate}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                         />
                         <p className="text-xs text-gray-500 mt-1">
@@ -346,7 +421,7 @@ export default function ActivityModal({
               )}
 
               {/* Actions */}
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
                 {selectedActivity && (
                   <>
                     <button
@@ -370,9 +445,18 @@ export default function ActivityModal({
                   </>
                 )}
                 <div className="flex-1" />
+                {activities.length > 0 && mode !== 'list' && (
+                  <button
+                    type="button"
+                    onClick={() => setMode('list')}
+                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg text-sm"
+                  >
+                    Back to List
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => activities.length > 0 && !activity ? setMode('list') : onClose()}
+                  onClick={onClose}
                   className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg text-sm"
                 >
                   Cancel
@@ -392,4 +476,3 @@ export default function ActivityModal({
     </div>
   )
 }
-

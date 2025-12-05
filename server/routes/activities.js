@@ -85,7 +85,7 @@ router.get('/date/:date', authenticateToken, async (req, res) => {
 // Create single activity
 router.post('/', authenticateToken, canEdit, async (req, res) => {
   try {
-    const { date, training_type_id, trainer_id, hours, notes } = req.body
+    const { date, training_type_id, trainer_id, hours, start_time, notes } = req.body
 
     if (!date || !training_type_id) {
       return res.status(400).json({ error: 'Date and training type are required' })
@@ -108,6 +108,7 @@ router.post('/', authenticateToken, canEdit, async (req, res) => {
       training_type_id,
       trainer_id: finalTrainerId,
       hours: parseFloat(finalHours),
+      start_time: start_time || null,
       series_id: null,
       is_deleted: false,
       notes: notes || null,
@@ -133,7 +134,7 @@ router.post('/', authenticateToken, canEdit, async (req, res) => {
 // Create recurring series
 router.post('/recurring', authenticateToken, canEdit, async (req, res) => {
   try {
-    const { training_type_id, trainer_id, hours, weekdays, start_date, end_date } = req.body
+    const { training_type_id, trainer_id, hours, start_time, weekdays, start_date, end_date } = req.body
 
     if (!training_type_id || !weekdays || !start_date || weekdays.length === 0) {
       return res.status(400).json({ 
@@ -158,6 +159,7 @@ router.post('/recurring', authenticateToken, canEdit, async (req, res) => {
       training_type_id,
       trainer_id: finalTrainerId,
       hours: parseFloat(finalHours),
+      start_time: start_time || null,
       weekdays: JSON.stringify(weekdays),
       start_date,
       end_date: end_date || null,
@@ -176,6 +178,7 @@ router.post('/recurring', authenticateToken, canEdit, async (req, res) => {
         training_type_id,
         trainer_id: finalTrainerId,
         hours: parseFloat(finalHours),
+        start_time: start_time || null,
         series_id: series.id,
         is_deleted: false,
         notes: null,
@@ -199,7 +202,7 @@ router.post('/recurring', authenticateToken, canEdit, async (req, res) => {
 router.put('/:id', authenticateToken, canEdit, async (req, res) => {
   try {
     const { id } = req.params
-    const { trainer_id, hours, notes } = req.body
+    const { trainer_id, hours, start_time, notes } = req.body
 
     await db.read()
 
@@ -210,6 +213,7 @@ router.put('/:id', authenticateToken, canEdit, async (req, res) => {
 
     if (trainer_id !== undefined) db.data.activities[activityIndex].trainer_id = trainer_id
     if (hours !== undefined) db.data.activities[activityIndex].hours = parseFloat(hours)
+    if (start_time !== undefined) db.data.activities[activityIndex].start_time = start_time
     if (notes !== undefined) db.data.activities[activityIndex].notes = notes
 
     await db.write()
