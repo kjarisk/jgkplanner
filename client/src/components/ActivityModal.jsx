@@ -66,8 +66,8 @@ export default function ActivityModal({
       } else if (isRecurring) {
         // Create recurring series
         await api.activities.createRecurring({
-          training_type_id: parseInt(formData.training_type_id),
-          trainer_id: formData.trainer_id ? parseInt(formData.trainer_id) : null,
+          training_type_id: formData.training_type_id,
+          trainer_id: formData.trainer_id || null,
           hours: parseFloat(formData.hours) || null,
           weekdays: formData.weekdays,
           start_date: date,
@@ -77,8 +77,8 @@ export default function ActivityModal({
         // Create single activity
         await api.activities.create({
           date,
-          training_type_id: parseInt(formData.training_type_id),
-          trainer_id: formData.trainer_id ? parseInt(formData.trainer_id) : null,
+          training_type_id: formData.training_type_id,
+          trainer_id: formData.trainer_id || null,
           hours: parseFloat(formData.hours) || null,
           notes: formData.notes || null
         })
