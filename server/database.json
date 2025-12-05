@@ -109,6 +109,16 @@
       "start_date": "2026-04-03",
       "end_date": "2026-06-26",
       "created_at": "2025-12-05T12:06:32.094Z"
+    },
+    {
+      "id": "eae4e9db-26f1-419e-b18f-17791555c96a",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "weekdays": "[5]",
+      "start_date": "2026-04-03",
+      "end_date": "2026-05-30",
+      "created_at": "2025-12-05T12:23:18.798Z"
     }
   ],
   "activities": [
@@ -187,7 +197,8 @@
       "series_id": "74e24d1c-2c02-4ead-b14a-ffcc65cced60",
       "is_deleted": false,
       "notes": null,
-      "created_at": "2025-12-05T12:06:32.094Z"
+      "created_at": "2025-12-05T12:06:32.094Z",
+      "start_time": "14:00"
     },
     {
       "id": "8a6416e2-ee4f-47b2-be5f-5b144979f365",
@@ -254,6 +265,127 @@
       "is_deleted": false,
       "notes": null,
       "created_at": "2025-12-05T12:06:32.094Z"
+    },
+    {
+      "id": "76fc159f-ef36-456f-a66c-06ffd45dc1e5",
+      "date": "2026-04-03",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "series_id": "eae4e9db-26f1-419e-b18f-17791555c96a",
+      "is_deleted": true,
+      "notes": null,
+      "created_at": "2025-12-05T12:23:18.798Z"
+    },
+    {
+      "id": "8a972a13-4346-4385-bba0-86dd8b5430cf",
+      "date": "2026-04-10",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "series_id": "eae4e9db-26f1-419e-b18f-17791555c96a",
+      "is_deleted": false,
+      "notes": null,
+      "created_at": "2025-12-05T12:23:18.798Z"
+    },
+    {
+      "id": "bbb6f295-b5b6-4bca-a359-43f8213c627e",
+      "date": "2026-04-17",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "series_id": "eae4e9db-26f1-419e-b18f-17791555c96a",
+      "is_deleted": false,
+      "notes": null,
+      "created_at": "2025-12-05T12:23:18.798Z"
+    },
+    {
+      "id": "134dcaaf-a528-49d0-8ec5-7df27c42122e",
+      "date": "2026-04-24",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "series_id": "eae4e9db-26f1-419e-b18f-17791555c96a",
+      "is_deleted": false,
+      "notes": null,
+      "created_at": "2025-12-05T12:23:18.798Z"
+    },
+    {
+      "id": "e0f92133-7e71-4b27-8f80-24cfc53887cc",
+      "date": "2026-05-01",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "series_id": "eae4e9db-26f1-419e-b18f-17791555c96a",
+      "is_deleted": true,
+      "notes": null,
+      "created_at": "2025-12-05T12:23:18.798Z"
+    },
+    {
+      "id": "082f5883-7e01-4531-99ec-135af966a55f",
+      "date": "2026-05-08",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "series_id": "eae4e9db-26f1-419e-b18f-17791555c96a",
+      "is_deleted": false,
+      "notes": null,
+      "created_at": "2025-12-05T12:23:18.798Z"
+    },
+    {
+      "id": "475156dd-75b2-4e43-8852-6642a8a5cc4f",
+      "date": "2026-05-15",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "series_id": "eae4e9db-26f1-419e-b18f-17791555c96a",
+      "is_deleted": true,
+      "notes": null,
+      "created_at": "2025-12-05T12:23:18.798Z"
+    },
+    {
+      "id": "005763f8-b5cd-4190-a604-be2f079dd2f1",
+      "date": "2026-05-22",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "series_id": "eae4e9db-26f1-419e-b18f-17791555c96a",
+      "is_deleted": false,
+      "notes": null,
+      "created_at": "2025-12-05T12:23:18.798Z"
+    },
+    {
+      "id": "1a39190c-e7f8-436d-abd2-9236f6b69a2d",
+      "date": "2026-05-29",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "series_id": "eae4e9db-26f1-419e-b18f-17791555c96a",
+      "is_deleted": false,
+      "notes": null,
+      "created_at": "2025-12-05T12:23:18.798Z"
+    },
+    {
+      "id": "e1859ec7-19f2-408e-a7ef-deb4230e9efc",
+      "date": "2026-04-16",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": null,
+      "created_at": "2025-12-05T12:24:07.831Z"
+    },
+    {
+      "id": "eacd4e48-40c8-471a-b3e2-7b8d52dd1159",
+      "date": "2026-05-15",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "555251b3-2592-40c3-9d33-50715e3f86d6",
+      "hours": 2,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": null,
+      "created_at": "2025-12-05T12:24:19.366Z"
     }
   ],
   "notifications": []
