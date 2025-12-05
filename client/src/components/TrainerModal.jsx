@@ -1,13 +1,19 @@
 import { useState } from 'react'
 import { api } from '../api'
 
-export default function TrainerModal({ trainer, onClose, onSaved }) {
+export default function TrainerModal({ trainer, users = [], onClose, onSaved }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [formData, setFormData] = useState({
     name: trainer?.name || '',
-    hourly_cost: trainer?.hourly_cost || 0
+    hourly_cost: trainer?.hourly_cost || 0,
+    user_id: trainer?.user_id || ''
   })
+
+  // Filter out users that are already linked to other trainers
+  const availableUsers = users.filter(u => 
+    !u.linked_trainer_id || u.linked_trainer_id === trainer?.id
+  )
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -17,7 +23,8 @@ export default function TrainerModal({ trainer, onClose, onSaved }) {
     try {
       const data = {
         name: formData.name,
-        hourly_cost: parseFloat(formData.hourly_cost) || 0
+        hourly_cost: parseFloat(formData.hourly_cost) || 0,
+        user_id: formData.user_id || null
       }
 
       if (trainer) {
@@ -86,6 +93,28 @@ export default function TrainerModal({ trainer, onClose, onSaved }) {
             />
             <p className="text-xs text-gray-500 mt-1">
               Set to 0 for unpaid/volunteer trainers
+            </p>
+          </div>
+
+          {/* Link to User */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Link to User Account
+            </label>
+            <select
+              value={formData.user_id}
+              onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            >
+              <option value="">No linked user</option>
+              {availableUsers.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.name} ({u.email})
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Link this trainer to a user account so they can log in and manage their activities
             </p>
           </div>
 

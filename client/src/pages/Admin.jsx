@@ -91,6 +91,15 @@ export default function Admin() {
 
   const unreadCount = notifications.filter(n => !n.is_read).length
 
+  // Enrich users with linked trainer info for filtering in TrainerModal
+  const usersWithTrainerInfo = users.map(u => {
+    const linkedTrainer = trainers.find(t => t.user_id === u.id)
+    return {
+      ...u,
+      linked_trainer_id: linkedTrainer?.id || null
+    }
+  })
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -251,6 +260,7 @@ export default function Admin() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Linked User</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hourly Cost</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                       </tr>
@@ -260,6 +270,22 @@ export default function Admin() {
                         <tr key={t.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {t.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {t.linked_user ? (
+                              <div className="flex items-center gap-2">
+                                {t.linked_user.avatar_url ? (
+                                  <img src={t.linked_user.avatar_url} alt="" className="w-6 h-6 rounded-full" />
+                                ) : (
+                                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                                    <span className="text-gray-500 text-xs">{t.linked_user.name?.[0]}</span>
+                                  </div>
+                                )}
+                                <span>{t.linked_user.name}</span>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 italic">Not linked</span>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {t.hourly_cost?.toLocaleString()} kr
@@ -282,7 +308,7 @@ export default function Admin() {
                       ))}
                       {trainers.length === 0 && (
                         <tr>
-                          <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
                             No trainers yet. Add your first trainer above.
                           </td>
                         </tr>
@@ -345,6 +371,7 @@ export default function Admin() {
       {trainerModal.open && (
         <TrainerModal
           trainer={trainerModal.trainer}
+          users={usersWithTrainerInfo}
           onClose={() => setTrainerModal({ open: false, trainer: null })}
           onSaved={handleTrainerSaved}
         />
