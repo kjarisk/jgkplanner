@@ -148,7 +148,7 @@
       "trainer_id": "de08ec37-1046-48e8-ab00-21fd66afb2cf",
       "hours": 2,
       "series_id": "74e24d1c-2c02-4ead-b14a-ffcc65cced60",
-      "is_deleted": false,
+      "is_deleted": true,
       "notes": null,
       "created_at": "2025-12-05T12:06:32.094Z",
       "start_time": "14:00"
@@ -193,7 +193,7 @@
       "trainer_id": "d16fb858-4ae1-48f7-883f-6aaf155958b1",
       "hours": 2,
       "series_id": "74e24d1c-2c02-4ead-b14a-ffcc65cced60",
-      "is_deleted": false,
+      "is_deleted": true,
       "notes": null,
       "created_at": "2025-12-05T12:06:32.094Z"
     },
@@ -284,7 +284,8 @@
       "series_id": "74e24d1c-2c02-4ead-b14a-ffcc65cced60",
       "is_deleted": false,
       "notes": null,
-      "created_at": "2025-12-05T12:06:32.094Z"
+      "created_at": "2025-12-05T12:06:32.094Z",
+      "start_time": "18:00"
     },
     {
       "id": "76fc159f-ef36-456f-a66c-06ffd45dc1e5",
@@ -612,7 +613,53 @@
       "is_deleted": false,
       "notes": "2. juledag",
       "created_at": "2025-12-05T14:00:00.000Z"
+    },
+    {
+      "id": "510a7017-82d2-4df6-8a43-3691a3d28f73",
+      "date": "2026-07-03",
+      "training_type_id": "915464c6-33ab-43db-b101-7c11cc9eda4c",
+      "trainer_id": "d16fb858-4ae1-48f7-883f-6aaf155958b1",
+      "hours": 2,
+      "start_time": null,
+      "series_id": null,
+      "is_deleted": false,
+      "notes": null,
+      "created_at": "2025-12-05T14:58:59.957Z"
+    },
+    {
+      "id": "d41de145-4b3a-4073-ae41-0602b4a9cb26",
+      "date": "2026-07-03",
+      "training_type_id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "hours": 2,
+      "start_time": "14:00",
+      "series_id": null,
+      "is_deleted": false,
+      "notes": null,
+      "created_at": "2025-12-05T14:58:59.957Z"
+    },
+    {
+      "id": "bc57919a-7608-437c-81b5-e12e8dce5125",
+      "date": "2026-06-26",
+      "training_type_id": "915464c6-33ab-43db-b101-7c11cc9eda4c",
+      "trainer_id": "d16fb858-4ae1-48f7-883f-6aaf155958b1",
+      "hours": 2,
+      "start_time": "17:00",
+      "series_id": null,
+      "is_deleted": false,
+      "notes": null,
+      "created_at": "2025-12-05T15:00:05.690Z"
     }
   ],
-  "notifications": []
+  "notifications": [],
+  "budgets": [
+    {
+      "id": "696b60d7-0aaf-40f5-a693-28b256e9c659",
+      "year": 2026,
+      "planned_budget": 50000,
+      "created_at": "2025-12-05T14:42:21.193Z",
+      "updated_at": "2025-12-05T14:42:34.643Z"
+    }
+  ],
+  "income_entries": []
 }

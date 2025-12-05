@@ -76,6 +76,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data)
     }),
+    createBulk: (activities) => fetchApi('/activities/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ activities })
+    }),
     update: (id, data) => fetchApi(`/activities/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data)
@@ -83,6 +87,23 @@ export const api = {
     delete: (id) => fetchApi(`/activities/${id}`, { method: 'DELETE' }),
     deleteSeries: (seriesId) => fetchApi(`/activities/series/${seriesId}`, { method: 'DELETE' }),
     getBudget: (year) => fetchApi(`/activities/budget/${year}`)
+  },
+
+  budget: {
+    get: (year) => fetchApi(`/budget/${year}`),
+    set: (year, data) => fetchApi(`/budget/${year}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+    addIncome: (data) => fetchApi('/budget/income', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    updateIncome: (id, data) => fetchApi(`/budget/income/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+    deleteIncome: (id) => fetchApi(`/budget/income/${id}`, { method: 'DELETE' })
   },
 
   notifications: {
@@ -93,4 +114,3 @@ export const api = {
     delete: (id) => fetchApi(`/notifications/${id}`, { method: 'DELETE' })
   }
 }
-

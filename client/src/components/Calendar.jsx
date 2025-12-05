@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 
 const MONTHS = [
   'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
@@ -114,7 +114,25 @@ function getActivitiesMap(activities) {
   return map
 }
 
-export default function Calendar({ year, activities, trainingTypes, onCellClick, onAddActivity, canEdit }) {
+export default function Calendar({ 
+  year, 
+  activities, 
+  trainingTypes, 
+  onCellClick, 
+  onAddActivity, 
+  canEdit,
+  viewMode = 'year',
+  selectedMonth = new Date().getMonth(),
+  selectedWeekStart,
+  onViewModeChange,
+  onMonthChange,
+  onWeekChange,
+  ghostDates = [],
+  ghostTypeId = null,
+  copiedWeek,
+  onCopyWeek,
+  onPasteWeek
+}) {
   const { months: calendar, maxCols } = useMemo(() => generateYearCalendar(year), [year])
   const activitiesMap = useMemo(() => getActivitiesMap(activities), [activities])
   const [contextMenu, setContextMenu] = useState(null)
@@ -122,10 +140,80 @@ export default function Calendar({ year, activities, trainingTypes, onCellClick,
   const [legendCollapsed, setLegendCollapsed] = useState(true)
   const [hoveredMonth, setHoveredMonth] = useState(null)
   const monthRefs = useRef({})
+  const touchStartX = useRef(null)
+  const touchStartY = useRef(null)
+  const [conflictTooltip, setConflictTooltip] = useState(null)
+  
+  // Calculate trainer conflicts for a day (time overlap check)
+  const getTrainerConflicts = (dayActivities) => {
+    const conflicts = []
+    for (let i = 0; i < dayActivities.length; i++) {
+      for (let j = i + 1; j < dayActivities.length; j++) {
+        const a1 = dayActivities[i]
+        const a2 = dayActivities[j]
+        
+        // Only check if same trainer
+        if (a1.trainer_id && a1.trainer_id === a2.trainer_id) {
+          // Check time overlap
+          const start1 = a1.start_time ? parseFloat(a1.start_time.replace(':', '.')) : 0
+          const end1 = start1 + (a1.hours || 1)
+          const start2 = a2.start_time ? parseFloat(a2.start_time.replace(':', '.')) : 0
+          const end2 = start2 + (a2.hours || 1)
+          
+          // Check for overlap
+          if (!(end1 <= start2 || end2 <= start1)) {
+            conflicts.push({
+              trainer: a1.trainer_name || 'Unknown trainer',
+              activity1: typeInfo[a1.training_type_id]?.name || 'Activity',
+              activity2: typeInfo[a2.training_type_id]?.name || 'Activity',
+              time1: a1.start_time || 'No time',
+              time2: a2.start_time || 'No time'
+            })
+          }
+        }
+      }
+    }
+    return conflicts
+  }
+  
+  // Handle swipe for month/week navigation
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+  
+  const handleTouchEnd = (e) => {
+    if (!touchStartX.current || !touchStartY.current) return
+    
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current
+    
+    // Only trigger if horizontal swipe is stronger than vertical
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+      if (viewMode === 'month' && onMonthChange) {
+        if (deltaX > 0) {
+          onMonthChange(Math.max(0, selectedMonth - 1))
+        } else {
+          onMonthChange(Math.min(11, selectedMonth + 1))
+        }
+      } else if (viewMode === 'week' && onWeekChange && selectedWeekStart) {
+        const newWeek = new Date(selectedWeekStart)
+        if (deltaX > 0) {
+          newWeek.setDate(newWeek.getDate() - 7)
+        } else {
+          newWeek.setDate(newWeek.getDate() + 7)
+        }
+        onWeekChange(newWeek)
+      }
+    }
+    
+    touchStartX.current = null
+    touchStartY.current = null
+  }
   
   // Today's date info
   const today = new Date()
-  const todayStr = today.toISOString().split('T')[0]
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
   const currentMonth = today.getMonth()
   const currentYear = today.getFullYear()
   const isCurrentYear = year === currentYear
@@ -208,23 +296,93 @@ export default function Calendar({ year, activities, trainingTypes, onCellClick,
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden animate-fadeIn" onClick={closeContextMenu}>
-      {/* Month Quick Jump */}
-      <div className="px-4 py-2 bg-gradient-to-r from-slate-800 to-slate-700 flex items-center gap-1 overflow-x-auto">
-        {MONTHS.map((month, i) => (
-          <button
-            key={month}
-            onClick={() => scrollToMonth(i)}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
-              isCurrentYear && i === currentMonth
-                ? 'bg-teal-500 text-white'
-                : 'text-slate-300 hover:bg-slate-600 hover:text-white'
-            }`}
-          >
-            {month.substring(0, 3)}
-          </button>
-        ))}
+      {/* Header with View Toggle and Month Quick Jump */}
+      <div className="px-4 py-2 bg-gradient-to-r from-slate-800 to-slate-700 flex items-center gap-3">
+        {/* View Mode Toggle */}
+        {onViewModeChange && (
+          <div className="flex bg-slate-600/50 rounded-lg p-0.5 mr-2">
+            {['year', 'month', 'week'].map((mode) => (
+              <button
+                key={mode}
+                onClick={() => onViewModeChange(mode)}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-all capitalize ${
+                  viewMode === mode
+                    ? 'bg-teal-500 text-white shadow-sm'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                {mode === 'year' ? 'Year' : mode === 'month' ? 'Month' : 'Week'}
+              </button>
+            ))}
+          </div>
+        )}
+        
+        {/* Today Button */}
+        <button
+          onClick={() => {
+            if (viewMode === 'year') {
+              scrollToMonth(currentMonth)
+            } else if (viewMode === 'month' && onMonthChange) {
+              onMonthChange(currentMonth)
+            } else if (viewMode === 'week' && onWeekChange) {
+              const todayDate = new Date()
+              const dayOfWeek = todayDate.getDay()
+              todayDate.setDate(todayDate.getDate() - dayOfWeek)
+              onWeekChange(todayDate)
+            }
+          }}
+          className="px-3 py-1 text-xs font-medium rounded-full bg-teal-600 text-white hover:bg-teal-500 transition-all"
+        >
+          Today
+        </button>
+        
+        {/* Month/Week Navigation (for month/week views) */}
+        {viewMode === 'month' && onMonthChange && (
+          <div className="flex items-center gap-1 ml-2">
+            <button
+              onClick={() => onMonthChange(Math.max(0, selectedMonth - 1))}
+              className="p-1 text-slate-300 hover:text-white transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="text-white text-sm font-medium min-w-[80px] text-center">
+              {MONTHS[selectedMonth]}
+            </span>
+            <button
+              onClick={() => onMonthChange(Math.min(11, selectedMonth + 1))}
+              className="p-1 text-slate-300 hover:text-white transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        )}
+        
+        {/* Month Quick Jump (year view only) */}
+        {viewMode === 'year' && (
+          <div className="flex items-center gap-1 overflow-x-auto flex-1">
+            {MONTHS.map((month, i) => (
+              <button
+                key={month}
+                onClick={() => scrollToMonth(i)}
+                className={`px-3 py-1 text-xs font-medium rounded-full transition-all whitespace-nowrap ${
+                  isCurrentYear && i === currentMonth
+                    ? 'bg-teal-500 text-white'
+                    : 'text-slate-300 hover:bg-slate-600 hover:text-white'
+                }`}
+              >
+                {month.substring(0, 3)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
+      {/* Year View */}
+      {viewMode === 'year' && (
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm" style={{ tableLayout: 'fixed' }}>
           <colgroup>
@@ -308,6 +466,9 @@ export default function Calendar({ year, activities, trainingTypes, onCellClick,
                     const hasActivities = dayActivities.length > 0
                     const hasMultiple = dayActivities.length > 1
                     const isToday = dayData.date === todayStr
+                    const isGhostDate = dayData.date && ghostDates.includes(dayData.date)
+                    const conflicts = canEdit && dayActivities.length > 1 ? getTrainerConflicts(dayActivities) : []
+                    const hasConflict = conflicts.length > 0
                     
                     return (
                       <td
@@ -381,6 +542,19 @@ export default function Calendar({ year, activities, trainingTypes, onCellClick,
                                   {dayData.day}
                                 </span>
                               </div>
+                            ) : isGhostDate ? (
+                              /* Ghost date for recurring preview */
+                              <div
+                                className="absolute inset-0.5 flex items-center justify-center rounded-sm opacity-40 border-2 border-dashed"
+                                style={{ 
+                                  backgroundColor: ghostTypeId && typeInfo[ghostTypeId]?.color || '#64748b',
+                                  borderColor: ghostTypeId && typeInfo[ghostTypeId]?.color || '#64748b'
+                                }}
+                              >
+                                <span className="text-[11px] font-semibold text-white drop-shadow-md">
+                                  {dayData.day}
+                                </span>
+                              </div>
                             ) : (
                               /* No activity */
                               <div
@@ -396,6 +570,25 @@ export default function Calendar({ year, activities, trainingTypes, onCellClick,
                                 </span>
                               </div>
                             )}
+                            {/* Conflict Warning Icon */}
+                            {hasConflict && (
+                              <div
+                                className="absolute top-0 right-0 z-10 cursor-help"
+                                onMouseEnter={(e) => {
+                                  const rect = e.currentTarget.getBoundingClientRect()
+                                  setConflictTooltip({
+                                    x: rect.left,
+                                    y: rect.bottom + 5,
+                                    conflicts
+                                  })
+                                }}
+                                onMouseLeave={() => setConflictTooltip(null)}
+                              >
+                                <svg className="w-3.5 h-3.5 text-red-500 drop-shadow" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            )}
                           </div>
                         )}
                       </td>
@@ -407,6 +600,225 @@ export default function Calendar({ year, activities, trainingTypes, onCellClick,
           </tbody>
         </table>
       </div>
+      )}
+
+      {/* Month View */}
+      {viewMode === 'month' && (
+        <div 
+          className="p-4"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="grid grid-cols-7 gap-2">
+            {/* Month Header */}
+            {WEEKDAYS.map((day, i) => (
+              <div key={day} className={`text-center py-2 text-sm font-semibold ${
+                i === 0 || i === 6 ? 'text-amber-600' : 'text-slate-600'
+              }`}>
+                {day}
+              </div>
+            ))}
+            
+            {/* Month Days */}
+            {(() => {
+              const daysInMonth = getDaysInMonth(year, selectedMonth)
+              const firstDay = getFirstDayOfMonth(year, selectedMonth)
+              const cells = []
+              
+              // Empty cells before first day
+              for (let i = 0; i < firstDay; i++) {
+                cells.push(<div key={`empty-${i}`} className="h-24 bg-slate-50 rounded-lg" />)
+              }
+              
+              // Day cells
+              for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                const dayActivities = activitiesMap[dateStr] || []
+                const isToday = dateStr === todayStr
+                const isGhost = ghostDates.includes(dateStr)
+                
+                cells.push(
+                  <div 
+                    key={day}
+                    onClick={() => canEdit && onCellClick(dateStr, null, dayActivities)}
+                    onDoubleClick={() => canEdit && dayActivities.length === 0 && onAddActivity(dateStr)}
+                    className={`h-24 border rounded-lg p-2 transition-all ${
+                      isToday ? 'ring-2 ring-teal-500 bg-teal-50' : 'border-slate-200 hover:bg-slate-50'
+                    } ${canEdit ? 'cursor-pointer' : ''}`}
+                  >
+                    <div className={`text-sm font-semibold mb-1 ${isToday ? 'text-teal-700' : 'text-slate-700'}`}>
+                      {day}
+                    </div>
+                    <div className="space-y-1 overflow-hidden">
+                      {dayActivities.slice(0, 3).map((activity) => (
+                        <div 
+                          key={activity.id}
+                          className="text-xs px-1.5 py-0.5 rounded truncate text-white"
+                          style={{ backgroundColor: typeInfo[activity.training_type_id]?.color }}
+                        >
+                          {activity.start_time && `${activity.start_time} `}
+                          {typeInfo[activity.training_type_id]?.name}
+                        </div>
+                      ))}
+                      {dayActivities.length > 3 && (
+                        <div className="text-xs text-slate-500">+{dayActivities.length - 3} more</div>
+                      )}
+                      {isGhost && (
+                        <div 
+                          className="text-xs px-1.5 py-0.5 rounded truncate text-white opacity-50 border-2 border-dashed"
+                          style={{ backgroundColor: typeInfo[ghostTypeId]?.color || '#64748b' }}
+                        >
+                          Preview
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              }
+              
+              return cells
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Week View */}
+      {viewMode === 'week' && selectedWeekStart && (
+        <div 
+          className="p-4"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* Copy/Paste Week Buttons */}
+          {canEdit && (
+            <div className="flex justify-end gap-2 mb-3">
+              <button
+                onClick={() => onCopyWeek && onCopyWeek(selectedWeekStart, getWeekNumber(selectedWeekStart))}
+                className="px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy Week
+              </button>
+              {copiedWeek && (
+                <button
+                  onClick={() => onPasteWeek && onPasteWeek(selectedWeekStart, getWeekNumber(selectedWeekStart))}
+                  className="px-3 py-1.5 text-sm bg-teal-500 text-white hover:bg-teal-600 rounded-lg transition-colors flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  Paste Week (from Week {copiedWeek.weekNumber})
+                </button>
+              )}
+            </div>
+          )}
+          <div className="grid grid-cols-7 gap-3">
+            {/* Week Days */}
+            {Array.from({ length: 7 }, (_, i) => {
+              const dayDate = new Date(selectedWeekStart)
+              dayDate.setDate(dayDate.getDate() + i)
+              const dateStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`
+              const dayActivities = activitiesMap[dateStr] || []
+              const isToday = dateStr === todayStr
+              const isWeekend = i === 0 || i === 6
+              
+              return (
+                <div key={i} className="flex flex-col">
+                  {/* Day Header */}
+                  <div className={`text-center py-2 rounded-t-lg ${
+                    isWeekend ? 'bg-amber-50' : 'bg-slate-100'
+                  }`}>
+                    <div className={`text-xs font-medium ${isWeekend ? 'text-amber-600' : 'text-slate-500'}`}>
+                      {WEEKDAYS[i]}
+                    </div>
+                    <div className={`text-lg font-bold ${
+                      isToday ? 'text-teal-600' : isWeekend ? 'text-amber-700' : 'text-slate-700'
+                    }`}>
+                      {dayDate.getDate()}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      {MONTHS[dayDate.getMonth()].substring(0, 3)}
+                    </div>
+                  </div>
+                  
+                  {/* Day Content */}
+                  <div 
+                    onClick={() => canEdit && onCellClick(dateStr, null, dayActivities)}
+                    onDoubleClick={() => canEdit && dayActivities.length === 0 && onAddActivity(dateStr)}
+                    className={`flex-1 min-h-[200px] border rounded-b-lg p-2 space-y-2 ${
+                      isToday ? 'ring-2 ring-teal-500 bg-teal-50/30' : 'border-slate-200'
+                    } ${canEdit ? 'cursor-pointer hover:bg-slate-50' : ''}`}
+                  >
+                    {dayActivities.map((activity) => (
+                      <div 
+                        key={activity.id}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onCellClick(dateStr, activity, dayActivities)
+                        }}
+                        className="p-2 rounded-lg text-white text-sm hover:brightness-95 transition-all cursor-pointer"
+                        style={{ backgroundColor: typeInfo[activity.training_type_id]?.color }}
+                      >
+                        <div className="font-semibold">
+                          {typeInfo[activity.training_type_id]?.name}
+                        </div>
+                        {activity.start_time && (
+                          <div className="text-xs opacity-90 mt-1">{activity.start_time}</div>
+                        )}
+                        {activity.trainer_name && (
+                          <div className="text-xs opacity-75">{activity.trainer_name}</div>
+                        )}
+                      </div>
+                    ))}
+                    {dayActivities.length === 0 && (
+                      <div className="h-full flex items-center justify-center text-slate-300 text-sm">
+                        {canEdit ? 'Double-click to add' : 'No activities'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          
+          {/* Week Navigation */}
+          {onWeekChange && (
+            <div className="flex justify-center items-center gap-4 mt-4">
+              <button
+                onClick={() => {
+                  const newWeek = new Date(selectedWeekStart)
+                  newWeek.setDate(newWeek.getDate() - 7)
+                  onWeekChange(newWeek)
+                }}
+                className="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Previous Week
+              </button>
+              <span className="text-sm text-slate-600 font-medium">
+                Week {getWeekNumber(selectedWeekStart)}
+              </span>
+              <button
+                onClick={() => {
+                  const newWeek = new Date(selectedWeekStart)
+                  newWeek.setDate(newWeek.getDate() + 7)
+                  onWeekChange(newWeek)
+                }}
+                className="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
+              >
+                Next Week
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tooltip */}
       {tooltip && (
@@ -450,6 +862,31 @@ export default function Calendar({ year, activities, trainingTypes, onCellClick,
             <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-full">
               <div className="border-8 border-transparent border-t-slate-800" />
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Conflict Tooltip */}
+      {conflictTooltip && (
+        <div
+          className="fixed z-50 animate-fadeIn"
+          style={{
+            left: conflictTooltip.x,
+            top: conflictTooltip.y
+          }}
+        >
+          <div className="bg-red-600 text-white px-3 py-2 rounded-lg shadow-xl text-sm max-w-xs">
+            <div className="font-semibold mb-1 flex items-center gap-1">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              Trainer Conflict
+            </div>
+            {conflictTooltip.conflicts.map((c, i) => (
+              <div key={i} className="text-xs mt-1 text-red-100">
+                <span className="font-medium">{c.trainer}</span>: {c.activity1} ({c.time1}) overlaps with {c.activity2} ({c.time2})
+              </div>
+            ))}
           </div>
         </div>
       )}

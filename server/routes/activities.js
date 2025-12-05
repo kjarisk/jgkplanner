@@ -82,6 +82,58 @@ router.get('/date/:date', authenticateToken, async (req, res) => {
   }
 })
 
+// Create bulk activities (for copy/paste week)
+router.post('/bulk', authenticateToken, canEdit, async (req, res) => {
+  try {
+    const { activities: newActivities } = req.body
+
+    if (!newActivities || !Array.isArray(newActivities) || newActivities.length === 0) {
+      return res.status(400).json({ error: 'Activities array is required' })
+    }
+
+    await db.read()
+
+    const createdActivities = []
+
+    for (const actData of newActivities) {
+      const { date, training_type_id, trainer_id, hours, start_time, notes } = actData
+
+      if (!date || !training_type_id) continue
+
+      const type = db.data.training_types.find(t => t.id === training_type_id)
+      if (!type) continue
+
+      const finalTrainerId = trainer_id || type.default_trainer_id
+      const finalHours = hours || type.default_hours
+
+      const activity = {
+        id: generateId(),
+        date,
+        training_type_id,
+        trainer_id: finalTrainerId,
+        hours: parseFloat(finalHours) || 0,
+        start_time: start_time || null,
+        series_id: null,
+        is_deleted: false,
+        notes: notes || null,
+        created_at: getCurrentTimestamp()
+      }
+
+      db.data.activities.push(activity)
+      createdActivities.push(activity)
+    }
+
+    await db.write()
+
+    res.status(201).json({
+      created: createdActivities.length,
+      activities: createdActivities
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Create single activity
 router.post('/', authenticateToken, canEdit, async (req, res) => {
   try {

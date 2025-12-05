@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { api } from '../api'
 
 const WEEKDAYS = [
@@ -11,6 +11,26 @@ const WEEKDAYS = [
   { value: 6, label: 'Saturday' }
 ]
 
+// Generate recurring dates for preview
+function generatePreviewDates(weekdays, startDate, endDate) {
+  if (!weekdays || weekdays.length === 0 || !startDate) return []
+  
+  const dates = []
+  const start = new Date(startDate)
+  const end = endDate ? new Date(endDate) : new Date(start.getFullYear(), 11, 31)
+  
+  const current = new Date(start)
+  while (current <= end) {
+    if (weekdays.includes(current.getDay())) {
+      const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`
+      dates.push(dateStr)
+    }
+    current.setDate(current.getDate() + 1)
+  }
+  
+  return dates
+}
+
 export default function ActivityModal({ 
   date, 
   activity, 
@@ -19,7 +39,8 @@ export default function ActivityModal({
   trainingTypes, 
   trainers, 
   onClose, 
-  onSaved 
+  onSaved,
+  onPreviewDates
 }) {
   const [mode, setMode] = useState(initialMode)
   const [selectedActivity, setSelectedActivity] = useState(activity)
@@ -70,14 +91,43 @@ export default function ActivityModal({
     }
   }, [formData.training_type_id, trainingTypes, selectedActivity])
 
+  // Generate preview dates when recurring options change
+  useEffect(() => {
+    if (onPreviewDates && isRecurring && formData.weekdays.length > 0 && currentDate) {
+      const previewDates = generatePreviewDates(
+        formData.weekdays, 
+        currentDate, 
+        formData.end_date || null
+      )
+      onPreviewDates(previewDates, formData.training_type_id)
+    } else if (onPreviewDates) {
+      onPreviewDates([], null)
+    }
+  }, [isRecurring, formData.weekdays, currentDate, formData.end_date, formData.training_type_id, onPreviewDates])
+
+  // Preview dates count for display
+  const previewDatesCount = useMemo(() => {
+    if (!isRecurring || formData.weekdays.length === 0 || !currentDate) return 0
+    return generatePreviewDates(formData.weekdays, currentDate, formData.end_date || null).length
+  }, [isRecurring, formData.weekdays, currentDate, formData.end_date])
+
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
     try {
+      let actionData = null
+      
       if (selectedActivity) {
-        // Update existing - include date change if applicable
+        // Update existing
+        const previousData = {
+          trainer_id: selectedActivity.trainer_id,
+          hours: selectedActivity.hours,
+          start_time: selectedActivity.start_time,
+          notes: selectedActivity.notes
+        }
+        
         const updateData = {
           trainer_id: formData.trainer_id || null,
           hours: parseFloat(formData.hours) || null,
@@ -85,11 +135,10 @@ export default function ActivityModal({
           notes: formData.notes || null
         }
         
-        // If date changed, we need to handle it differently
         if (currentDate !== selectedActivity.date) {
-          // Delete old and create new
+          // Date changed - delete old and create new
           await api.activities.delete(selectedActivity.id)
-          await api.activities.create({
+          const newActivity = await api.activities.create({
             date: currentDate,
             training_type_id: selectedActivity.training_type_id,
             trainer_id: formData.trainer_id || null,
@@ -97,12 +146,33 @@ export default function ActivityModal({
             start_time: formData.start_time || null,
             notes: formData.notes || null
           })
+          
+          actionData = {
+            type: 'reschedule_activity',
+            activityId: newActivity.id,
+            originalDate: selectedActivity.date,
+            activityData: {
+              training_type_id: selectedActivity.training_type_id,
+              trainer_id: formData.trainer_id || null,
+              hours: parseFloat(formData.hours) || null,
+              start_time: formData.start_time || null,
+              notes: formData.notes || null
+            },
+            message: 'Activity rescheduled'
+          }
         } else {
           await api.activities.update(selectedActivity.id, updateData)
+          
+          actionData = {
+            type: 'update_activity',
+            activityId: selectedActivity.id,
+            previousData,
+            message: 'Activity updated'
+          }
         }
       } else if (isRecurring) {
         // Create recurring series
-        await api.activities.createRecurring({
+        const result = await api.activities.createRecurring({
           training_type_id: formData.training_type_id,
           trainer_id: formData.trainer_id || null,
           hours: parseFloat(formData.hours) || null,
@@ -111,9 +181,15 @@ export default function ActivityModal({
           start_date: currentDate,
           end_date: formData.end_date || null
         })
+        
+        actionData = {
+          type: 'create_recurring',
+          seriesId: result.series_id,
+          message: `Created ${result.activities_created} recurring activities`
+        }
       } else {
         // Create single activity
-        await api.activities.create({
+        const newActivity = await api.activities.create({
           date: currentDate,
           training_type_id: formData.training_type_id,
           trainer_id: formData.trainer_id || null,
@@ -121,8 +197,15 @@ export default function ActivityModal({
           start_time: formData.start_time || null,
           notes: formData.notes || null
         })
+        
+        actionData = {
+          type: 'create_activity',
+          activityId: newActivity.id,
+          message: 'Activity created'
+        }
       }
-      onSaved()
+      
+      onSaved(actionData)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -136,8 +219,23 @@ export default function ActivityModal({
 
     setLoading(true)
     try {
+      // Store activity data for undo
+      const activityData = {
+        date: selectedActivity.date,
+        training_type_id: selectedActivity.training_type_id,
+        trainer_id: selectedActivity.trainer_id,
+        hours: selectedActivity.hours,
+        start_time: selectedActivity.start_time,
+        notes: selectedActivity.notes
+      }
+      
       await api.activities.delete(selectedActivity.id)
-      onSaved()
+      
+      onSaved({
+        type: 'delete_activity',
+        activityData,
+        message: 'Activity deleted'
+      })
     } catch (err) {
       setError(err.message)
       setLoading(false)
@@ -151,7 +249,10 @@ export default function ActivityModal({
     setLoading(true)
     try {
       await api.activities.deleteSeries(selectedActivity.series_id)
-      onSaved()
+      onSaved({
+        type: 'delete_series',
+        message: 'Recurring series deleted'
+      })
     } catch (err) {
       setError(err.message)
       setLoading(false)
@@ -163,7 +264,7 @@ export default function ActivityModal({
       ...prev,
       weekdays: prev.weekdays.includes(day)
         ? prev.weekdays.filter(d => d !== day)
-        : [...prev.weekdays, day].slice(0, 2) // Max 2 days
+        : [...prev.weekdays, day].slice(0, 2)
     }))
   }
 
@@ -180,6 +281,7 @@ export default function ActivityModal({
     })
     setIsRecurring(false)
     setMode('add')
+    if (onPreviewDates) onPreviewDates([], null)
   }
 
   function selectActivityToEdit(act) {
@@ -229,10 +331,9 @@ export default function ActivityModal({
             </div>
           )}
 
-          {/* List Mode - show existing activities */}
+          {/* List Mode */}
           {mode === 'list' && (
             <div className="space-y-3">
-              {/* Date Display */}
               <div className="pb-3 text-sm text-gray-600 border-b border-gray-200">
                 {formatDate(date)}
               </div>
@@ -270,7 +371,7 @@ export default function ActivityModal({
           {/* Add/Edit Form */}
           {(mode === 'add' || mode === 'edit') && (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Date (editable in edit mode) */}
+              {/* Date */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Date {selectedActivity && <span className="text-gray-400">(can be changed)</span>}
@@ -302,7 +403,7 @@ export default function ActivityModal({
                 </select>
               </div>
 
-              {/* Trainer Override */}
+              {/* Trainer */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Trainer {!selectedActivity && '(override)'}
@@ -361,7 +462,7 @@ export default function ActivityModal({
                 />
               </div>
 
-              {/* Recurring Options (only for new activities) */}
+              {/* Recurring Options */}
               {!selectedActivity && (
                 <div className="border-t border-gray-200 pt-4">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -415,6 +516,18 @@ export default function ActivityModal({
                           Leave empty to repeat until end of year
                         </p>
                       </div>
+
+                      {/* Preview count */}
+                      {previewDatesCount > 0 && (
+                        <div className="p-3 bg-teal-50 rounded-lg">
+                          <p className="text-sm text-teal-700">
+                            <span className="font-semibold">{previewDatesCount}</span> activities will be created
+                          </p>
+                          <p className="text-xs text-teal-600 mt-1">
+                            Preview shown on calendar
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

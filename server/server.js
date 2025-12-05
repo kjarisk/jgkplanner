@@ -14,6 +14,7 @@ import trainersRoutes from './routes/trainers.js'
 import typesRoutes from './routes/types.js'
 import activitiesRoutes from './routes/activities.js'
 import notificationsRoutes from './routes/notifications.js'
+import budgetRoutes from './routes/budget.js'
 import './config/passport.js'
 
 dotenv.config()
@@ -53,6 +54,7 @@ app.use('/api/trainers', trainersRoutes)
 app.use('/api/types', typesRoutes)
 app.use('/api/activities', activitiesRoutes)
 app.use('/api/notifications', notificationsRoutes)
+app.use('/api/budget', budgetRoutes)
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
