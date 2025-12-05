@@ -1,0 +1,22 @@
+{
+  "name": "jgkplanner",
+  "version": "1.0.0",
+  "description": "Sports Calendar and Budget Tracker",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "client": "npm run dev --prefix client",
+    "server": "node server/server.js",
+    "server:dev": "nodemon server/server.js",
+    "build": "npm run build --prefix client",
+    "start": "NODE_ENV=production node server/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2"
+  }
+}
+
