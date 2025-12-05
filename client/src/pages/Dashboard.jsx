@@ -162,6 +162,7 @@ export default function Dashboard() {
                 trainingTypes={trainingTypes}
                 trainers={trainers}
                 year={year}
+                onActivityUpdated={loadData}
               />
             </>
           )}

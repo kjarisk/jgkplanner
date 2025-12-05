@@ -187,16 +187,46 @@ export default function Calendar({ year, activities, trainingTypes, onCellClick,
                     >
                       {dayData.day && (
                         <div className="w-full h-full relative">
-                          {/* Multiple activities - split cell */}
-                          {hasMultiple ? (
+                          {/* 3+ activities - 2x2 grid */}
+                          {dayActivities.length >= 3 ? (
+                            <>
+                              <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-px bg-white/30">
+                                {dayActivities.slice(0, 4).map((activity, i) => (
+                                  <div
+                                    key={activity.id}
+                                    onClick={() => canEdit && handleCellClick(dayData.date, dayActivities, i)}
+                                    className="cursor-pointer hover:brightness-90 transition-all"
+                                    style={{ backgroundColor: typeColors[activity.training_type_id] }}
+                                    title={`${activity.type_name}${activity.start_time ? ' @ ' + activity.start_time : ''}`}
+                                  />
+                                ))}
+                                {/* Fill empty corner if only 3 activities */}
+                                {dayActivities.length === 3 && (
+                                  <div className="bg-gray-200" />
+                                )}
+                              </div>
+                              {/* Centered day number */}
+                              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-md pointer-events-none">
+                                {dayData.day}
+                              </span>
+                              {dayActivities.length > 4 && (
+                                <div 
+                                  className="absolute bottom-0 right-0 text-[7px] text-white bg-black/60 px-0.5 rounded-tl pointer-events-none"
+                                >
+                                  +{dayActivities.length - 4}
+                                </div>
+                              )}
+                            </>
+                          ) : hasMultiple ? (
+                            /* 2 activities - split vertically */
                             <>
                               <div className="absolute inset-0 flex">
-                                {dayActivities.slice(0, 3).map((activity, i) => (
+                                {dayActivities.map((activity, i) => (
                                   <div
                                     key={activity.id}
                                     onClick={() => canEdit && handleCellClick(dayData.date, dayActivities, i)}
                                     className={`flex-1 h-full cursor-pointer hover:brightness-90 transition-all ${
-                                      i < dayActivities.length - 1 ? 'border-r border-white/50' : ''
+                                      i === 0 ? 'border-r border-white/50' : ''
                                     }`}
                                     style={{ backgroundColor: typeColors[activity.training_type_id] }}
                                     title={`${activity.type_name}${activity.start_time ? ' @ ' + activity.start_time : ''}`}
@@ -207,14 +237,6 @@ export default function Calendar({ year, activities, trainingTypes, onCellClick,
                               <span className="absolute inset-0 flex items-center justify-center text-[11px] font-medium text-white drop-shadow-sm pointer-events-none">
                                 {dayData.day}
                               </span>
-                              {dayActivities.length > 3 && (
-                                <div 
-                                  className="absolute bottom-0 right-0 text-[8px] text-white bg-black/50 px-0.5 rounded-tl"
-                                  onClick={() => canEdit && handleCellClick(dayData.date, dayActivities)}
-                                >
-                                  +{dayActivities.length - 3}
-                                </div>
-                              )}
                             </>
                           ) : hasActivities ? (
                             /* Single activity - full cell color */

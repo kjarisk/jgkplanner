@@ -137,12 +137,13 @@
       "id": "184c8492-b952-4233-a9ac-c89faeebe023",
       "date": "2026-04-03",
       "training_type_id": "915464c6-33ab-43db-b101-7c11cc9eda4c",
-      "trainer_id": "d16fb858-4ae1-48f7-883f-6aaf155958b1",
+      "trainer_id": "de08ec37-1046-48e8-ab00-21fd66afb2cf",
       "hours": 2,
       "series_id": "74e24d1c-2c02-4ead-b14a-ffcc65cced60",
       "is_deleted": false,
       "notes": null,
-      "created_at": "2025-12-05T12:06:32.094Z"
+      "created_at": "2025-12-05T12:06:32.094Z",
+      "start_time": "14:00"
     },
     {
       "id": "59dadb86-daba-4e9f-9359-e2ed936b0f5b",
