@@ -3,7 +3,7 @@ import { api } from '../api'
 import { getTodayString } from '../utils/date'
 import { formatCurrency } from '../utils/format'
 
-export default function BudgetSummary({ year, onClose }) {
+export default function BudgetSummary({ year, activities = [], onClose }) {
   const [loading, setLoading] = useState(true)
   const [budget, setBudget] = useState(null)
   const [budgetData, setBudgetData] = useState(null)
@@ -16,12 +16,21 @@ export default function BudgetSummary({ year, onClose }) {
   // Income form state
   const [showIncomeForm, setShowIncomeForm] = useState(false)
   const [incomeForm, setIncomeForm] = useState({
-    amount: '',
+    unit_amount: '',
+    quantity: '1',
     description: '',
     date: getTodayString(),
     activity_id: ''
   })
   const [savingIncome, setSavingIncome] = useState(false)
+
+  // Calculate total from unit_amount × quantity
+  const calculatedTotal = (parseFloat(incomeForm.unit_amount) || 0) * (parseInt(incomeForm.quantity) || 1)
+
+  // Get activities for the current year for linking
+  const yearActivities = activities
+    .filter(a => a.date?.startsWith(String(year)))
+    .sort((a, b) => a.date.localeCompare(b.date))
 
   useEffect(() => {
     loadData()
@@ -69,19 +78,21 @@ export default function BudgetSummary({ year, onClose }) {
 
   async function handleAddIncome(e) {
     e.preventDefault()
-    if (!incomeForm.amount || !incomeForm.date) return
+    if (!incomeForm.unit_amount || !incomeForm.date) return
     
     setSavingIncome(true)
     try {
       await api.budget.addIncome({
         year,
-        amount: parseFloat(incomeForm.amount),
+        unit_amount: parseFloat(incomeForm.unit_amount),
+        quantity: parseInt(incomeForm.quantity) || 1,
         description: incomeForm.description,
         date: incomeForm.date,
         activity_id: incomeForm.activity_id || null
       })
       setIncomeForm({
-        amount: '',
+        unit_amount: '',
+        quantity: '1',
         description: '',
         date: getTodayString(),
         activity_id: ''
@@ -359,17 +370,37 @@ export default function BudgetSummary({ year, onClose }) {
                   {/* Income Form */}
                   {showIncomeForm && (
                     <form onSubmit={handleAddIncome} className="bg-gray-50 p-4 rounded-lg space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Amount *</label>
+                      {/* Amount calculation row */}
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Amount *</label>
+                        <div className="flex items-center gap-2">
                           <input
                             type="number"
-                            value={incomeForm.amount}
-                            onChange={(e) => setIncomeForm({ ...incomeForm, amount: e.target.value })}
+                            value={incomeForm.unit_amount}
+                            onChange={(e) => setIncomeForm({ ...incomeForm, unit_amount: e.target.value })}
+                            placeholder="Unit price"
                             required
-                            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                            min="0"
+                            step="any"
+                            className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                           />
+                          <span className="text-gray-500 font-medium">×</span>
+                          <input
+                            type="number"
+                            value={incomeForm.quantity}
+                            onChange={(e) => setIncomeForm({ ...incomeForm, quantity: e.target.value })}
+                            min="1"
+                            className="w-20 border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          />
+                          <span className="text-gray-500 font-medium">=</span>
+                          <div className="w-28 bg-gray-100 border border-gray-200 rounded px-3 py-2 text-sm font-semibold text-green-600">
+                            {formatCurrency(calculatedTotal)}
+                          </div>
                         </div>
+                        <p className="text-xs text-gray-400 mt-1">Unit price × Quantity = Total</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="block text-xs text-gray-600 mb-1">Date *</label>
                           <input
@@ -380,6 +411,21 @@ export default function BudgetSummary({ year, onClose }) {
                             className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                           />
                         </div>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Link to Event</label>
+                          <select
+                            value={incomeForm.activity_id}
+                            onChange={(e) => setIncomeForm({ ...incomeForm, activity_id: e.target.value })}
+                            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          >
+                            <option value="">No linked event</option>
+                            {yearActivities.map(act => (
+                              <option key={act.id} value={act.id}>
+                                {act.date} - {act.type_name || 'Training'}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-xs text-gray-600 mb-1">Description</label>
@@ -387,7 +433,7 @@ export default function BudgetSummary({ year, onClose }) {
                           type="text"
                           value={incomeForm.description}
                           onChange={(e) => setIncomeForm({ ...incomeForm, description: e.target.value })}
-                          placeholder="e.g., Sponsorship, Grant..."
+                          placeholder="e.g., Participant fees, Sponsorship, Grant..."
                           className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                         />
                       </div>
@@ -401,7 +447,7 @@ export default function BudgetSummary({ year, onClose }) {
                         </button>
                         <button
                           type="submit"
-                          disabled={savingIncome}
+                          disabled={savingIncome || !incomeForm.unit_amount}
                           className="px-3 py-1.5 text-sm bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50"
                         >
                           {savingIncome ? 'Adding...' : 'Add Income'}
@@ -416,6 +462,7 @@ export default function BudgetSummary({ year, onClose }) {
                       <tr className="text-left text-xs text-gray-500 uppercase">
                         <th className="pb-3">Date</th>
                         <th className="pb-3">Description</th>
+                        <th className="pb-3 text-right">Calculation</th>
                         <th className="pb-3 text-right">Amount</th>
                         <th className="pb-3 text-right">Actions</th>
                       </tr>
@@ -427,11 +474,18 @@ export default function BudgetSummary({ year, onClose }) {
                             {new Date(entry.date).toLocaleDateString('no-NO')}
                           </td>
                           <td className="py-3 text-gray-900">
-                            {entry.description || '-'}
+                            <div>{entry.description || '-'}</div>
                             {entry.activity && (
-                              <span className="ml-2 text-xs bg-slate-100 px-2 py-0.5 rounded">
-                                {entry.activity.type_name}
+                              <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded">
+                                {entry.activity.date} - {entry.activity.type_name}
                               </span>
+                            )}
+                          </td>
+                          <td className="py-3 text-right text-gray-500 text-sm">
+                            {entry.unit_amount && entry.quantity ? (
+                              <span>{formatCurrency(entry.unit_amount)} × {entry.quantity}</span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
                             )}
                           </td>
                           <td className="py-3 text-right font-medium text-green-600">
@@ -449,7 +503,7 @@ export default function BudgetSummary({ year, onClose }) {
                       ))}
                       {(!budgetData?.income_entries || budgetData.income_entries.length === 0) && (
                         <tr>
-                          <td colSpan={4} className="py-8 text-center text-gray-500">
+                          <td colSpan={5} className="py-8 text-center text-gray-500">
                             No income entries for this year
                           </td>
                         </tr>

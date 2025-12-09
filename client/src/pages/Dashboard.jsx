@@ -457,6 +457,7 @@ export default function Dashboard() {
       {showBudget && isAdmin && (
         <BudgetSummary
           year={year}
+          activities={activities}
           onClose={() => setShowBudget(false)}
         />
       )}

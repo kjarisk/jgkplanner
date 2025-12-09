@@ -11,6 +11,7 @@ export const createActivitySchema = z.object({
   date: dateSchema,
   training_type_id: z.string().min(1, 'Training type is required'),
   trainer_id: z.string().optional().nullable(),
+  trainer_ids: z.array(z.string()).optional().nullable(), // Multiple trainers support
   hours: z.coerce.number().positive().optional().nullable(),
   start_time: timeSchema,
   notes: z.string().max(500).optional().nullable()
@@ -18,6 +19,7 @@ export const createActivitySchema = z.object({
 
 export const updateActivitySchema = z.object({
   trainer_id: z.string().optional().nullable(),
+  trainer_ids: z.array(z.string()).optional().nullable(), // Multiple trainers support
   hours: z.coerce.number().positive().optional().nullable(),
   start_time: timeSchema,
   notes: z.string().max(500).optional().nullable()
@@ -26,6 +28,7 @@ export const updateActivitySchema = z.object({
 export const createRecurringSchema = z.object({
   training_type_id: z.string().min(1, 'Training type is required'),
   trainer_id: z.string().optional().nullable(),
+  trainer_ids: z.array(z.string()).optional().nullable(), // Multiple trainers support
   hours: z.coerce.number().positive().optional().nullable(),
   start_time: timeSchema,
   weekdays: z.array(z.coerce.number().int().min(0).max(6)).min(1, 'At least one weekday is required'),

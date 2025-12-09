@@ -52,7 +52,7 @@ export default function ActivityModal({
   
   const [formData, setFormData] = useState({
     training_type_id: activity?.training_type_id || '',
-    trainer_id: activity?.trainer_id || '',
+    trainer_ids: activity?.trainer_ids || (activity?.trainer_id ? [activity.trainer_id] : []),
     hours: activity?.hours || '',
     start_time: activity?.start_time || '',
     notes: activity?.notes || '',
@@ -63,13 +63,19 @@ export default function ActivityModal({
 
   // Track which training type we've already applied defaults for (prevents loops)
   const appliedDefaultsForType = useRef(null)
+  // Track which activity we've already initialized form from (prevents loops)
+  const initializedForActivityId = useRef(null)
 
   // Update form when activity changes
   useEffect(() => {
     if (activity) {
+      // Skip if we've already initialized for this activity
+      if (initializedForActivityId.current === activity.id) return
+      initializedForActivityId.current = activity.id
+      
       setFormData({
         training_type_id: activity.training_type_id || '',
-        trainer_id: activity.trainer_id || '',
+        trainer_ids: activity.trainer_ids || (activity.trainer_id ? [activity.trainer_id] : []),
         hours: activity.hours || '',
         start_time: activity.start_time || '',
         notes: activity.notes || '',
@@ -92,7 +98,7 @@ export default function ActivityModal({
       appliedDefaultsForType.current = formData.training_type_id
       setFormData(prev => ({
         ...prev,
-        trainer_id: prev.trainer_id || type.default_trainer_id || '',
+        trainer_ids: prev.trainer_ids?.length > 0 ? prev.trainer_ids : (type.default_trainer_id ? [type.default_trainer_id] : []),
         hours: prev.hours || type.default_hours || ''
       }))
     }
@@ -140,14 +146,14 @@ export default function ActivityModal({
       if (selectedActivity) {
         // Update existing
         const previousData = {
-          trainer_id: selectedActivity.trainer_id,
+          trainer_ids: selectedActivity.trainer_ids || (selectedActivity.trainer_id ? [selectedActivity.trainer_id] : []),
           hours: selectedActivity.hours,
           start_time: selectedActivity.start_time,
           notes: selectedActivity.notes
         }
         
         const updateData = {
-          trainer_id: formData.trainer_id || null,
+          trainer_ids: formData.trainer_ids?.length > 0 ? formData.trainer_ids : [],
           hours: parseFloat(formData.hours) || null,
           start_time: formData.start_time || null,
           notes: formData.notes || null
@@ -159,7 +165,7 @@ export default function ActivityModal({
           const newActivity = await api.activities.create({
             date: currentDate,
             training_type_id: selectedActivity.training_type_id,
-            trainer_id: formData.trainer_id || null,
+            trainer_ids: formData.trainer_ids?.length > 0 ? formData.trainer_ids : [],
             hours: parseFloat(formData.hours) || null,
             start_time: formData.start_time || null,
             notes: formData.notes || null
@@ -171,7 +177,7 @@ export default function ActivityModal({
             originalDate: selectedActivity.date,
             activityData: {
               training_type_id: selectedActivity.training_type_id,
-              trainer_id: formData.trainer_id || null,
+              trainer_ids: formData.trainer_ids?.length > 0 ? formData.trainer_ids : [],
               hours: parseFloat(formData.hours) || null,
               start_time: formData.start_time || null,
               notes: formData.notes || null
@@ -192,7 +198,7 @@ export default function ActivityModal({
         // Create recurring series
         const result = await api.activities.createRecurring({
           training_type_id: formData.training_type_id,
-          trainer_id: formData.trainer_id || null,
+          trainer_ids: formData.trainer_ids?.length > 0 ? formData.trainer_ids : [],
           hours: parseFloat(formData.hours) || null,
           start_time: formData.start_time || null,
           weekdays: formData.weekdays,
@@ -210,7 +216,7 @@ export default function ActivityModal({
         const newActivity = await api.activities.create({
           date: currentDate,
           training_type_id: formData.training_type_id,
-          trainer_id: formData.trainer_id || null,
+          trainer_ids: formData.trainer_ids?.length > 0 ? formData.trainer_ids : [],
           hours: parseFloat(formData.hours) || null,
           start_time: formData.start_time || null,
           notes: formData.notes || null
@@ -241,7 +247,7 @@ export default function ActivityModal({
       const activityData = {
         date: selectedActivity.date,
         training_type_id: selectedActivity.training_type_id,
-        trainer_id: selectedActivity.trainer_id,
+        trainer_ids: selectedActivity.trainer_ids || (selectedActivity.trainer_id ? [selectedActivity.trainer_id] : []),
         hours: selectedActivity.hours,
         start_time: selectedActivity.start_time,
         notes: selectedActivity.notes
@@ -287,10 +293,13 @@ export default function ActivityModal({
   }
 
   function switchToAddMode() {
+    // Reset the ref so add mode doesn't think we're still editing
+    initializedForActivityId.current = null
+    appliedDefaultsForType.current = null
     setSelectedActivity(null)
     setFormData({
       training_type_id: '',
-      trainer_id: '',
+      trainer_ids: [],
       hours: '',
       start_time: '',
       notes: '',
@@ -303,10 +312,12 @@ export default function ActivityModal({
   }
 
   function selectActivityToEdit(act) {
+    // Update the ref so the useEffect doesn't re-initialize
+    initializedForActivityId.current = act.id
     setSelectedActivity(act)
     setFormData({
       training_type_id: act.training_type_id,
-      trainer_id: act.trainer_id || '',
+      trainer_ids: act.trainer_ids || (act.trainer_id ? [act.trainer_id] : []),
       hours: act.hours || '',
       start_time: act.start_time || '',
       notes: act.notes || '',
@@ -412,21 +423,66 @@ export default function ActivityModal({
                 </select>
               </div>
 
-              {/* Trainer */}
+              {/* Trainers (Multiple Selection) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Trainer {!selectedActivity && '(override)'}
+                  Trainers {!selectedActivity && '(override)'}
                 </label>
+                {/* Selected trainers as chips */}
+                {formData.trainer_ids?.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.trainer_ids.map(trainerId => {
+                      const trainer = trainers.find(t => t.id === trainerId)
+                      if (!trainer) return null
+                      return (
+                        <span
+                          key={trainerId}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-teal-100 text-teal-800 rounded-full text-sm"
+                        >
+                          {trainer.name}
+                          <button
+                            type="button"
+                            onClick={() => setFormData({
+                              ...formData,
+                              trainer_ids: formData.trainer_ids.filter(id => id !== trainerId)
+                            })}
+                            className="hover:text-teal-600"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+                {/* Add trainer dropdown */}
                 <select
-                  value={formData.trainer_id}
-                  onChange={(e) => setFormData({ ...formData, trainer_id: e.target.value })}
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value && !formData.trainer_ids?.includes(e.target.value)) {
+                      setFormData({
+                        ...formData,
+                        trainer_ids: [...(formData.trainer_ids || []), e.target.value]
+                      })
+                    }
+                  }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 >
-                  <option value="">Use default</option>
-                  {trainers.map(trainer => (
-                    <option key={trainer.id} value={trainer.id}>{trainer.name}</option>
-                  ))}
+                  <option value="">
+                    {formData.trainer_ids?.length > 0 ? '+ Add another trainer' : 'Select trainer(s)'}
+                  </option>
+                  {trainers
+                    .filter(t => !formData.trainer_ids?.includes(t.id))
+                    .map(trainer => (
+                      <option key={trainer.id} value={trainer.id}>{trainer.name}</option>
+                    ))
+                  }
                 </select>
+                {formData.trainer_ids?.length === 0 && !selectedActivity && (
+                  <p className="text-xs text-gray-500 mt-1">Will use default trainer if none selected</p>
+                )}
               </div>
 
               {/* Hours and Start Time */}

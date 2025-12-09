@@ -27,7 +27,11 @@ export default function UpcomingTrainings({ activities, trainingTypes, trainers,
     return activities
       .filter(activity => {
         if (activity.date < startDate) return false
-        if (filters.trainer && activity.trainer_id !== filters.trainer) return false
+        // Check if trainer is in trainer_ids array (or fallback to trainer_id)
+        if (filters.trainer) {
+          const activityTrainerIds = activity.trainer_ids || (activity.trainer_id ? [activity.trainer_id] : [])
+          if (!activityTrainerIds.includes(filters.trainer)) return false
+        }
         if (filters.type && activity.training_type_id !== filters.type) return false
         if (filters.timeFilter && activity.start_time) {
           const hour = parseInt(activity.start_time.split(':')[0])
@@ -280,9 +284,9 @@ export default function UpcomingTrainings({ activities, trainingTypes, trainers,
                     </span>
                   </div>
                   
-                  {/* Trainer */}
+                  {/* Trainer(s) */}
                   <div className="text-sm text-gray-500 flex-shrink-0">
-                    {activity.trainer_name || '-'}
+                    {activity.trainer_names || activity.trainer_name || '-'}
                   </div>
                   
                   {/* Hours */}

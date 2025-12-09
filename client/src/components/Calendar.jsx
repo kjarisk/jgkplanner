@@ -767,8 +767,8 @@ export default function Calendar({
                         {activity.start_time && (
                           <div className="text-xs opacity-90 mt-1">{activity.start_time}</div>
                         )}
-                        {activity.trainer_name && (
-                          <div className="text-xs opacity-75">{activity.trainer_name}</div>
+                        {(activity.trainer_names || activity.trainer_name) && (
+                          <div className="text-xs opacity-75">{activity.trainer_names || activity.trainer_name}</div>
                         )}
                       </div>
                     ))}
@@ -841,12 +841,12 @@ export default function Calendar({
                   {tooltip.activity.start_time}
                 </div>
               )}
-              {tooltip.activity.trainer_name && (
+              {(tooltip.activity.trainer_names || tooltip.activity.trainer_name) && (
                 <div className="flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  {tooltip.activity.trainer_name}
+                  {tooltip.activity.trainer_names || tooltip.activity.trainer_name}
                 </div>
               )}
               {tooltip.activity.hours && (

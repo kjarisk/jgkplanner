@@ -105,10 +105,27 @@ router.put('/:year', authenticateToken, adminOnly, async (req, res) => {
 // Add income entry (admin only)
 router.post('/income', authenticateToken, adminOnly, async (req, res) => {
   try {
-    const { year, amount, description, activity_id, date } = req.body
+    const { year, amount, unit_amount, quantity, description, activity_id, date } = req.body
 
-    if (!year || amount === undefined || !date) {
-      return res.status(400).json({ error: 'Year, amount, and date are required' })
+    if (!year || !date) {
+      return res.status(400).json({ error: 'Year and date are required' })
+    }
+
+    // Support both old (amount) and new (unit_amount × quantity) formats
+    let finalAmount = 0
+    let finalUnitAmount = null
+    let finalQuantity = null
+
+    if (unit_amount !== undefined) {
+      // New format: unit_amount × quantity
+      finalUnitAmount = parseFloat(unit_amount) || 0
+      finalQuantity = parseInt(quantity) || 1
+      finalAmount = finalUnitAmount * finalQuantity
+    } else if (amount !== undefined) {
+      // Legacy format: just amount
+      finalAmount = parseFloat(amount) || 0
+    } else {
+      return res.status(400).json({ error: 'Either amount or unit_amount is required' })
     }
 
     await ensureBudgetTables()
@@ -116,7 +133,9 @@ router.post('/income', authenticateToken, adminOnly, async (req, res) => {
     const incomeEntry = {
       id: generateId(),
       year: parseInt(year),
-      amount: parseFloat(amount),
+      amount: finalAmount,
+      unit_amount: finalUnitAmount,
+      quantity: finalQuantity,
       description: description || '',
       activity_id: activity_id || null,
       date,
@@ -136,7 +155,7 @@ router.post('/income', authenticateToken, adminOnly, async (req, res) => {
 router.put('/income/:id', authenticateToken, adminOnly, async (req, res) => {
   try {
     const { id } = req.params
-    const { amount, description, activity_id, date } = req.body
+    const { amount, unit_amount, quantity, description, activity_id, date } = req.body
 
     await ensureBudgetTables()
 
@@ -145,14 +164,27 @@ router.put('/income/:id', authenticateToken, adminOnly, async (req, res) => {
       return res.status(404).json({ error: 'Income entry not found' })
     }
 
-    if (amount !== undefined) db.data.income_entries[incomeIndex].amount = parseFloat(amount)
-    if (description !== undefined) db.data.income_entries[incomeIndex].description = description
-    if (activity_id !== undefined) db.data.income_entries[incomeIndex].activity_id = activity_id
-    if (date !== undefined) db.data.income_entries[incomeIndex].date = date
+    const entry = db.data.income_entries[incomeIndex]
+
+    // Handle unit_amount × quantity calculation
+    if (unit_amount !== undefined || quantity !== undefined) {
+      entry.unit_amount = unit_amount !== undefined ? parseFloat(unit_amount) : entry.unit_amount
+      entry.quantity = quantity !== undefined ? parseInt(quantity) : entry.quantity
+      // Recalculate total if we have both values
+      if (entry.unit_amount !== null && entry.quantity !== null) {
+        entry.amount = entry.unit_amount * entry.quantity
+      }
+    } else if (amount !== undefined) {
+      entry.amount = parseFloat(amount)
+    }
+
+    if (description !== undefined) entry.description = description
+    if (activity_id !== undefined) entry.activity_id = activity_id
+    if (date !== undefined) entry.date = date
 
     await db.write()
 
-    res.json(db.data.income_entries[incomeIndex])
+    res.json(entry)
   } catch (error) {
     res.status(500).json({ error: error.message })
   }

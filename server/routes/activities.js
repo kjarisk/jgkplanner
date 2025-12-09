@@ -5,6 +5,32 @@ import { validate, createActivitySchema, updateActivitySchema, createRecurringSc
 
 const router = express.Router()
 
+// Helper to normalize trainer_id/trainer_ids - always returns an array
+function normalizeTrainerIds(trainer_id, trainer_ids, defaultTrainerId = null) {
+  // If trainer_ids array is provided, use it
+  if (trainer_ids && Array.isArray(trainer_ids) && trainer_ids.length > 0) {
+    return trainer_ids.filter(id => id) // Filter out null/empty values
+  }
+  // If single trainer_id is provided, wrap in array
+  if (trainer_id) {
+    return [trainer_id]
+  }
+  // Fall back to default
+  if (defaultTrainerId) {
+    return [defaultTrainerId]
+  }
+  return []
+}
+
+// Helper to get trainer details for an activity
+function getTrainersForActivity(activity, trainers) {
+  const trainerIds = activity.trainer_ids || (activity.trainer_id ? [activity.trainer_id] : [])
+  return trainerIds
+    .map(id => trainers.find(t => t.id === id))
+    .filter(t => t)
+    .map(t => ({ id: t.id, name: t.name, hourly_cost: t.hourly_cost }))
+}
+
 // Helper to generate dates for recurring series
 function generateRecurringDates(weekdays, startDate, endDate) {
   const dates = []
@@ -37,14 +63,20 @@ router.get('/year/:year', authenticateToken, async (req, res) => {
       .filter(a => a.date >= startDate && a.date <= endDate && !a.is_deleted)
       .map(a => {
         const type = db.data.training_types.find(t => t.id === a.training_type_id)
-        const trainer = a.trainer_id ? db.data.trainers.find(t => t.id === a.trainer_id) : null
+        const trainers = getTrainersForActivity(a, db.data.trainers)
+        // Backwards compatibility: keep trainer_id as first trainer
+        const primaryTrainerId = a.trainer_ids?.[0] || a.trainer_id || null
+        const primaryTrainer = primaryTrainerId ? db.data.trainers.find(t => t.id === primaryTrainerId) : null
         return {
           ...a,
+          trainer_ids: a.trainer_ids || (a.trainer_id ? [a.trainer_id] : []),
+          trainers,
           type_name: type?.name || 'Unknown',
           type_color: type?.color || '#gray',
           default_hours: type?.default_hours,
           default_trainer_id: type?.default_trainer_id,
-          trainer_name: trainer?.name || null
+          trainer_name: primaryTrainer?.name || null,
+          trainer_names: trainers.map(t => t.name).join(', ') || null
         }
       })
       .sort((a, b) => a.date.localeCompare(b.date))
@@ -66,14 +98,19 @@ router.get('/date/:date', authenticateToken, async (req, res) => {
       .filter(a => a.date === date && !a.is_deleted)
       .map(a => {
         const type = db.data.training_types.find(t => t.id === a.training_type_id)
-        const trainer = a.trainer_id ? db.data.trainers.find(t => t.id === a.trainer_id) : null
+        const trainers = getTrainersForActivity(a, db.data.trainers)
+        const primaryTrainerId = a.trainer_ids?.[0] || a.trainer_id || null
+        const primaryTrainer = primaryTrainerId ? db.data.trainers.find(t => t.id === primaryTrainerId) : null
         return {
           ...a,
+          trainer_ids: a.trainer_ids || (a.trainer_id ? [a.trainer_id] : []),
+          trainers,
           type_name: type?.name || 'Unknown',
           type_color: type?.color || '#gray',
           default_hours: type?.default_hours,
           default_trainer_id: type?.default_trainer_id,
-          trainer_name: trainer?.name || null
+          trainer_name: primaryTrainer?.name || null,
+          trainer_names: trainers.map(t => t.name).join(', ') || null
         }
       })
 
@@ -97,21 +134,22 @@ router.post('/bulk', authenticateToken, canEdit, async (req, res) => {
     const createdActivities = []
 
     for (const actData of newActivities) {
-      const { date, training_type_id, trainer_id, hours, start_time, notes } = actData
+      const { date, training_type_id, trainer_id, trainer_ids, hours, start_time, notes } = actData
 
       if (!date || !training_type_id) continue
 
       const type = db.data.training_types.find(t => t.id === training_type_id)
       if (!type) continue
 
-      const finalTrainerId = trainer_id || type.default_trainer_id
+      const finalTrainerIds = normalizeTrainerIds(trainer_id, trainer_ids, type.default_trainer_id)
       const finalHours = hours || type.default_hours
 
       const activity = {
         id: generateId(),
         date,
         training_type_id,
-        trainer_id: finalTrainerId,
+        trainer_id: finalTrainerIds[0] || null, // Backwards compatibility
+        trainer_ids: finalTrainerIds,
         hours: parseFloat(finalHours) || 0,
         start_time: start_time || null,
         series_id: null,
@@ -138,7 +176,7 @@ router.post('/bulk', authenticateToken, canEdit, async (req, res) => {
 // Create single activity
 router.post('/', authenticateToken, canEdit, validate(createActivitySchema), async (req, res) => {
   try {
-    const { date, training_type_id, trainer_id, hours, start_time, notes } = req.body
+    const { date, training_type_id, trainer_id, trainer_ids, hours, start_time, notes } = req.body
 
     await db.read()
 
@@ -148,14 +186,15 @@ router.post('/', authenticateToken, canEdit, validate(createActivitySchema), asy
       return res.status(404).json({ error: 'Training type not found' })
     }
 
-    const finalTrainerId = trainer_id || type.default_trainer_id
+    const finalTrainerIds = normalizeTrainerIds(trainer_id, trainer_ids, type.default_trainer_id)
     const finalHours = hours || type.default_hours
 
     const activity = {
       id: generateId(),
       date,
       training_type_id,
-      trainer_id: finalTrainerId,
+      trainer_id: finalTrainerIds[0] || null, // Backwards compatibility
+      trainer_ids: finalTrainerIds,
       hours: parseFloat(finalHours),
       start_time: start_time || null,
       series_id: null,
@@ -167,13 +206,16 @@ router.post('/', authenticateToken, canEdit, validate(createActivitySchema), asy
     db.data.activities.push(activity)
     await db.write()
 
-    const trainer = finalTrainerId ? db.data.trainers.find(t => t.id === finalTrainerId) : null
+    const trainers = getTrainersForActivity(activity, db.data.trainers)
+    const primaryTrainer = finalTrainerIds[0] ? db.data.trainers.find(t => t.id === finalTrainerIds[0]) : null
 
     res.status(201).json({
       ...activity,
+      trainers,
       type_name: type.name,
       type_color: type.color,
-      trainer_name: trainer?.name || null
+      trainer_name: primaryTrainer?.name || null,
+      trainer_names: trainers.map(t => t.name).join(', ') || null
     })
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -183,7 +225,7 @@ router.post('/', authenticateToken, canEdit, validate(createActivitySchema), asy
 // Create recurring series
 router.post('/recurring', authenticateToken, canEdit, validate(createRecurringSchema), async (req, res) => {
   try {
-    const { training_type_id, trainer_id, hours, start_time, weekdays, start_date, end_date } = req.body
+    const { training_type_id, trainer_id, trainer_ids, hours, start_time, weekdays, start_date, end_date } = req.body
 
     await db.read()
 
@@ -193,14 +235,15 @@ router.post('/recurring', authenticateToken, canEdit, validate(createRecurringSc
       return res.status(404).json({ error: 'Training type not found' })
     }
 
-    const finalTrainerId = trainer_id || type.default_trainer_id
+    const finalTrainerIds = normalizeTrainerIds(trainer_id, trainer_ids, type.default_trainer_id)
     const finalHours = hours || type.default_hours
 
     // Create the series
     const series = {
       id: generateId(),
       training_type_id,
-      trainer_id: finalTrainerId,
+      trainer_id: finalTrainerIds[0] || null, // Backwards compatibility
+      trainer_ids: finalTrainerIds,
       hours: parseFloat(finalHours),
       start_time: start_time || null,
       weekdays: JSON.stringify(weekdays),
@@ -219,7 +262,8 @@ router.post('/recurring', authenticateToken, canEdit, validate(createRecurringSc
         id: generateId(),
         date,
         training_type_id,
-        trainer_id: finalTrainerId,
+        trainer_id: finalTrainerIds[0] || null, // Backwards compatibility
+        trainer_ids: finalTrainerIds,
         hours: parseFloat(finalHours),
         start_time: start_time || null,
         series_id: series.id,
@@ -245,7 +289,7 @@ router.post('/recurring', authenticateToken, canEdit, validate(createRecurringSc
 router.put('/:id', authenticateToken, canEdit, async (req, res) => {
   try {
     const { id } = req.params
-    const { trainer_id, hours, start_time, notes } = req.body
+    const { trainer_id, trainer_ids, hours, start_time, notes } = req.body
 
     await db.read()
 
@@ -254,7 +298,15 @@ router.put('/:id', authenticateToken, canEdit, async (req, res) => {
       return res.status(404).json({ error: 'Activity not found' })
     }
 
-    if (trainer_id !== undefined) db.data.activities[activityIndex].trainer_id = trainer_id
+    // Handle trainer_ids update (new format takes priority)
+    if (trainer_ids !== undefined) {
+      db.data.activities[activityIndex].trainer_ids = trainer_ids
+      db.data.activities[activityIndex].trainer_id = trainer_ids[0] || null // Backwards compatibility
+    } else if (trainer_id !== undefined) {
+      db.data.activities[activityIndex].trainer_id = trainer_id
+      db.data.activities[activityIndex].trainer_ids = trainer_id ? [trainer_id] : []
+    }
+    
     if (hours !== undefined) db.data.activities[activityIndex].hours = parseFloat(hours)
     if (start_time !== undefined) db.data.activities[activityIndex].start_time = start_time
     if (notes !== undefined) db.data.activities[activityIndex].notes = notes
@@ -263,13 +315,17 @@ router.put('/:id', authenticateToken, canEdit, async (req, res) => {
 
     const activity = db.data.activities[activityIndex]
     const type = db.data.training_types.find(t => t.id === activity.training_type_id)
-    const trainer = activity.trainer_id ? db.data.trainers.find(t => t.id === activity.trainer_id) : null
+    const trainers = getTrainersForActivity(activity, db.data.trainers)
+    const primaryTrainer = activity.trainer_ids?.[0] ? db.data.trainers.find(t => t.id === activity.trainer_ids[0]) : null
 
     res.json({
       ...activity,
+      trainer_ids: activity.trainer_ids || (activity.trainer_id ? [activity.trainer_id] : []),
+      trainers,
       type_name: type?.name || 'Unknown',
       type_color: type?.color || '#gray',
-      trainer_name: trainer?.name || null
+      trainer_name: primaryTrainer?.name || null,
+      trainer_names: trainers.map(t => t.name).join(', ') || null
     })
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -331,6 +387,15 @@ router.delete('/series/:seriesId', authenticateToken, canEdit, async (req, res) 
   }
 })
 
+// Helper to calculate total cost for an activity (handles multiple trainers)
+function calculateActivityCost(activity, trainers) {
+  const trainerIds = activity.trainer_ids || (activity.trainer_id ? [activity.trainer_id] : [])
+  return trainerIds.reduce((sum, trainerId) => {
+    const trainer = trainers.find(t => t.id === trainerId)
+    return sum + (activity.hours || 0) * (trainer?.hourly_cost || 0)
+  }, 0)
+}
+
 // Get budget summary for a year (admin only)
 router.get('/budget/:year', authenticateToken, adminOnly, async (req, res) => {
   try {
@@ -348,8 +413,7 @@ router.get('/budget/:year', authenticateToken, adminOnly, async (req, res) => {
     const byTypeMap = {}
     yearActivities.forEach(a => {
       const type = db.data.training_types.find(t => t.id === a.training_type_id)
-      const trainer = a.trainer_id ? db.data.trainers.find(t => t.id === a.trainer_id) : null
-      const cost = (a.hours || 0) * (trainer?.hourly_cost || 0)
+      const cost = calculateActivityCost(a, db.data.trainers)
 
       if (!byTypeMap[a.training_type_id]) {
         byTypeMap[a.training_type_id] = {
@@ -366,28 +430,32 @@ router.get('/budget/:year', authenticateToken, adminOnly, async (req, res) => {
       byTypeMap[a.training_type_id].total_cost += cost
     })
 
-    // Summary by trainer
+    // Summary by trainer (each trainer gets counted for activities they're on)
     const byTrainerMap = {}
     yearActivities.forEach(a => {
-      if (!a.trainer_id) return
-      const trainer = db.data.trainers.find(t => t.id === a.trainer_id)
-      if (!trainer) return
+      const trainerIds = a.trainer_ids || (a.trainer_id ? [a.trainer_id] : [])
+      if (trainerIds.length === 0) return
 
-      const cost = (a.hours || 0) * (trainer.hourly_cost || 0)
+      trainerIds.forEach(trainerId => {
+        const trainer = db.data.trainers.find(t => t.id === trainerId)
+        if (!trainer) return
 
-      if (!byTrainerMap[a.trainer_id]) {
-        byTrainerMap[a.trainer_id] = {
-          id: a.trainer_id,
-          name: trainer.name,
-          hourly_cost: trainer.hourly_cost,
-          session_count: 0,
-          total_hours: 0,
-          total_cost: 0
+        const cost = (a.hours || 0) * (trainer.hourly_cost || 0)
+
+        if (!byTrainerMap[trainerId]) {
+          byTrainerMap[trainerId] = {
+            id: trainerId,
+            name: trainer.name,
+            hourly_cost: trainer.hourly_cost,
+            session_count: 0,
+            total_hours: 0,
+            total_cost: 0
+          }
         }
-      }
-      byTrainerMap[a.trainer_id].session_count++
-      byTrainerMap[a.trainer_id].total_hours += a.hours || 0
-      byTrainerMap[a.trainer_id].total_cost += cost
+        byTrainerMap[trainerId].session_count++
+        byTrainerMap[trainerId].total_hours += a.hours || 0
+        byTrainerMap[trainerId].total_cost += cost
+      })
     })
 
     // Grand totals
@@ -395,10 +463,9 @@ router.get('/budget/:year', authenticateToken, adminOnly, async (req, res) => {
     let totalHours = 0
     let totalCost = 0
     yearActivities.forEach(a => {
-      const trainer = a.trainer_id ? db.data.trainers.find(t => t.id === a.trainer_id) : null
       totalSessions++
       totalHours += a.hours || 0
-      totalCost += (a.hours || 0) * (trainer?.hourly_cost || 0)
+      totalCost += calculateActivityCost(a, db.data.trainers)
     })
 
     res.json({
