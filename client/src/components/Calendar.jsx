@@ -117,7 +117,12 @@ function getActivitiesMap(activities) {
 export default function Calendar({ 
   year, 
   activities, 
-  trainingTypes, 
+  trainingTypes,
+  trainers = [],
+  hiddenTrainers = new Set(),
+  onToggleTrainer,
+  onShowAllTrainers,
+  onShowOnlyTrainer,
   onCellClick, 
   onAddActivity, 
   canEdit,
@@ -360,6 +365,43 @@ export default function Calendar({
             </button>
           </div>
         )}
+        
+        {/* Week Navigation with Month display */}
+        {viewMode === 'week' && onWeekChange && selectedWeekStart && (() => {
+          const weekNum = getWeekNumber(selectedWeekStart)
+          const weekMonth = MONTHS[selectedWeekStart.getMonth()]
+          return (
+            <div className="flex items-center gap-1 ml-2">
+              <button
+                onClick={() => {
+                  const newWeek = new Date(selectedWeekStart)
+                  newWeek.setDate(newWeek.getDate() - 7)
+                  onWeekChange(newWeek)
+                }}
+                className="p-1 text-slate-300 hover:text-white transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="text-white text-sm font-medium min-w-[120px] text-center">
+                Uke {weekNum} - {weekMonth}
+              </span>
+              <button
+                onClick={() => {
+                  const newWeek = new Date(selectedWeekStart)
+                  newWeek.setDate(newWeek.getDate() + 7)
+                  onWeekChange(newWeek)
+                }}
+                className="p-1 text-slate-300 hover:text-white transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )
+        })()}
         
         {/* Month Quick Jump (year view only) */}
         {viewMode === 'year' && (
@@ -969,17 +1011,59 @@ export default function Calendar({
         </div>
       )}
       
+      {/* Trainer Filter */}
+      {trainers.length > 0 && onToggleTrainer && (
+        <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Trainers Filter</span>
+            {hiddenTrainers.size > 0 && (
+              <button
+                onClick={onShowAllTrainers}
+                className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+              >
+                Show All
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {trainers.map(trainer => {
+              const isHidden = hiddenTrainers.has(trainer.id)
+              return (
+                <button
+                  key={trainer.id}
+                  onClick={() => onToggleTrainer(trainer.id)}
+                  onDoubleClick={() => onShowOnlyTrainer && onShowOnlyTrainer(trainer.id)}
+                  title={`Click to ${isHidden ? 'show' : 'hide'}, double-click to show only this trainer`}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                    isHidden
+                      ? 'bg-slate-200 text-slate-400 line-through'
+                      : 'bg-teal-100 text-teal-700 hover:bg-teal-200'
+                  }`}
+                >
+                  {trainer.name}
+                </button>
+              )
+            })}
+          </div>
+          {hiddenTrainers.size > 0 && (
+            <p className="text-xs text-slate-400 mt-2">
+              {hiddenTrainers.size} trainer{hiddenTrainers.size > 1 ? 's' : ''} hidden
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Legend */}
       <div className="border-t border-slate-200">
         <button
           onClick={() => setLegendCollapsed(!legendCollapsed)}
           className="w-full px-4 py-2 bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-between text-sm text-slate-600"
         >
-          <span className="font-medium">Legend</span>
-          <svg 
-            className={`w-4 h-4 transition-transform ${legendCollapsed ? '' : 'rotate-180'}`} 
-            fill="none" 
-            stroke="currentColor" 
+          <span className="font-medium">Training Types</span>
+          <svg
+            className={`w-4 h-4 transition-transform ${legendCollapsed ? '' : 'rotate-180'}`}
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

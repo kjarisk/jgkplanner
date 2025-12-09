@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useUndo } from '../context/UndoContext'
 import { api } from '../api'
@@ -15,8 +16,15 @@ export default function Dashboard() {
   const { user, isAdmin, canEdit } = useAuth()
   const { addAction, toast, clearToast, undo, redo } = useUndo()
   const isMobile = useMobile()
+  const navigate = useNavigate()
+  const { year: urlYear } = useParams()
   
-  const [year, setYear] = useState(new Date().getFullYear())
+  // Year from URL or default to current year
+  const [year, setYear] = useState(() => {
+    const parsedYear = parseInt(urlYear)
+    return isNaN(parsedYear) ? new Date().getFullYear() : parsedYear
+  })
+  
   const [activities, setActivities] = useState([])
   const [trainingTypes, setTrainingTypes] = useState([])
   const [trainers, setTrainers] = useState([])
@@ -26,6 +34,43 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState('year') // 'year' | 'month' | 'week'
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedWeekStart, setSelectedWeekStart] = useState(getWeekStart(new Date()))
+  
+  // Trainer filter state - Set of hidden trainer IDs
+  const [hiddenTrainers, setHiddenTrainers] = useState(new Set())
+  
+  // Get trainers who have activities in this year
+  const activeTrainers = useMemo(() => {
+    const trainerIds = new Set()
+    activities.forEach(activity => {
+      // Handle both trainer_ids array and legacy trainer_id
+      const ids = activity.trainer_ids || (activity.trainer_id ? [activity.trainer_id] : [])
+      ids.forEach(id => trainerIds.add(id))
+    })
+    return trainers.filter(t => trainerIds.has(t.id))
+  }, [activities, trainers])
+  
+  // Filter activities by hidden trainers
+  const filteredActivities = useMemo(() => {
+    if (hiddenTrainers.size === 0) return activities
+    return activities.filter(activity => {
+      const ids = activity.trainer_ids || (activity.trainer_id ? [activity.trainer_id] : [])
+      // Show activity if ANY of its trainers are visible
+      return ids.some(id => !hiddenTrainers.has(id))
+    })
+  }, [activities, hiddenTrainers])
+  
+  // Sync URL with year
+  useEffect(() => {
+    navigate(`/dashboard/${year}`, { replace: true })
+  }, [year, navigate])
+  
+  // Update year if URL changes
+  useEffect(() => {
+    const parsedYear = parseInt(urlYear)
+    if (!isNaN(parsedYear) && parsedYear !== year) {
+      setYear(parsedYear)
+    }
+  }, [urlYear])
   
   // Ghost dates for recurring preview
   const [ghostDates, setGhostDates] = useState([])
@@ -298,13 +343,128 @@ export default function Dashboard() {
     handleAddActivity(todayStr)
   }
 
+  // Helper: Get first week that starts in a given month
+  function getFirstWeekOfMonth(targetYear, targetMonth) {
+    // Start from the 1st of the month and find the first Sunday
+    const firstOfMonth = new Date(targetYear, targetMonth, 1)
+    const dayOfWeek = firstOfMonth.getDay() // 0 = Sunday
+    
+    if (dayOfWeek === 0) {
+      // 1st is already a Sunday
+      return firstOfMonth
+    } else {
+      // Find the next Sunday (first full week in this month)
+      const daysUntilSunday = 7 - dayOfWeek
+      const firstSunday = new Date(targetYear, targetMonth, 1 + daysUntilSunday)
+      return firstSunday
+    }
+  }
+
+  // Smart year change handler
+  function handleYearChange(newYear) {
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    
+    if (viewMode === 'month') {
+      // When changing year in month view, go to smart month
+      if (newYear === currentYear) {
+        setSelectedMonth(now.getMonth())
+      } else if (newYear > currentYear) {
+        setSelectedMonth(0) // January for future years
+      } else {
+        setSelectedMonth(11) // December for past years
+      }
+    } else if (viewMode === 'week') {
+      // When changing year in week view, go to smart week
+      if (newYear === currentYear) {
+        setSelectedWeekStart(getWeekStart(now))
+      } else if (newYear > currentYear) {
+        // First week that starts IN the new year (January)
+        setSelectedWeekStart(getFirstWeekOfMonth(newYear, 0))
+      } else {
+        // Last week of December for past years
+        setSelectedWeekStart(getFirstWeekOfMonth(newYear, 11))
+      }
+    }
+    
+    setYear(newYear)
+  }
+
+  // Smart view mode change handler
+  function handleViewModeChange(newMode) {
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth()
+    
+    if (newMode === 'month') {
+      if (viewMode === 'week') {
+        // Week → Month: Go to month containing the middle of the week (Wednesday)
+        const midWeek = new Date(selectedWeekStart)
+        midWeek.setDate(midWeek.getDate() + 3) // Wednesday
+        setSelectedMonth(midWeek.getMonth())
+      } else if (viewMode === 'year') {
+        // Year → Month: Go to nearest month
+        if (year === currentYear) {
+          setSelectedMonth(currentMonth)
+        } else if (year > currentYear) {
+          setSelectedMonth(0) // January for future years
+        } else {
+          setSelectedMonth(11) // December for past years
+        }
+      }
+    } else if (newMode === 'week') {
+      if (viewMode === 'month') {
+        // Month → Week: First week that starts in selected month
+        setSelectedWeekStart(getFirstWeekOfMonth(year, selectedMonth))
+      } else if (viewMode === 'year') {
+        // Year → Week: Nearest week
+        if (year === currentYear) {
+          setSelectedWeekStart(getWeekStart(now))
+        } else if (year > currentYear) {
+          // First week that starts IN the year (January)
+          setSelectedWeekStart(getFirstWeekOfMonth(year, 0))
+        } else {
+          // Last week of December for past years
+          setSelectedWeekStart(getFirstWeekOfMonth(year, 11))
+        }
+      }
+    }
+    
+    setViewMode(newMode)
+  }
+
+  // Toggle trainer visibility
+  function handleToggleTrainer(trainerId) {
+    setHiddenTrainers(prev => {
+      const next = new Set(prev)
+      if (next.has(trainerId)) {
+        next.delete(trainerId)
+      } else {
+        next.add(trainerId)
+      }
+      return next
+    })
+  }
+
+  // Show all trainers
+  function handleShowAllTrainers() {
+    setHiddenTrainers(new Set())
+  }
+
+  // Hide all trainers except one
+  function handleShowOnlyTrainer(trainerId) {
+    const newHidden = new Set(activeTrainers.map(t => t.id))
+    newHidden.delete(trainerId)
+    setHiddenTrainers(newHidden)
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar - hidden on mobile */}
       <div className={`${isMobile ? 'hidden' : 'block'}`}>
         <Sidebar
           year={year}
-          onYearChange={setYear}
+          onYearChange={handleYearChange}
           trainingTypes={trainingTypes}
           onAddType={() => setTypeModal({ open: true, type: null })}
           onEditType={(type) => setTypeModal({ open: true, type })}
@@ -330,7 +490,7 @@ export default function Dashboard() {
             {isMobile && (
               <select
                 value={year}
-                onChange={(e) => setYear(parseInt(e.target.value))}
+                onChange={(e) => handleYearChange(parseInt(e.target.value))}
                 className="text-sm border border-gray-300 rounded-lg px-2 py-1"
               >
                 {Array.from({ length: 8 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
@@ -355,15 +515,20 @@ export default function Dashboard() {
             <>
               <Calendar
                 year={year}
-                activities={activities}
+                activities={filteredActivities}
                 trainingTypes={trainingTypes}
+                trainers={activeTrainers}
+                hiddenTrainers={hiddenTrainers}
+                onToggleTrainer={handleToggleTrainer}
+                onShowAllTrainers={handleShowAllTrainers}
+                onShowOnlyTrainer={handleShowOnlyTrainer}
                 onCellClick={handleCellClick}
                 onAddActivity={handleAddActivity}
                 canEdit={canEdit}
                 viewMode={viewMode}
                 selectedMonth={selectedMonth}
                 selectedWeekStart={selectedWeekStart}
-                onViewModeChange={setViewMode}
+                onViewModeChange={handleViewModeChange}
                 onMonthChange={setSelectedMonth}
                 onWeekChange={setSelectedWeekStart}
                 ghostDates={ghostDates}

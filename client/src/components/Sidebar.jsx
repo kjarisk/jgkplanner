@@ -83,7 +83,7 @@ export default function Sidebar({
         {isAdmin && (
           <>
             <Link
-              to="/budget"
+              to={`/budget/${year}`}
               className="flex items-center justify-center gap-2 w-full px-3 py-2 bg-teal-600 hover:bg-teal-700 rounded text-sm font-medium transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
