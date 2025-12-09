@@ -189,11 +189,11 @@ export default function Dashboard() {
     loadData()
   }
 
-  // Handle preview dates for recurring activities
-  function handlePreviewDates(dates, typeId) {
+  // Handle preview dates for recurring activities (memoized to prevent infinite loops)
+  const handlePreviewDates = useCallback((dates, typeId) => {
     setGhostDates(dates || [])
     setGhostTypeId(typeId || null)
-  }
+  }, [])
 
   // Handle copy week
   function handleCopyWeek(weekStart, weekNumber) {

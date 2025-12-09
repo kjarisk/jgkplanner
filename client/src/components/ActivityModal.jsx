@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { api } from '../api'
 import { formatDate, toDateString } from '../utils/date'
 
@@ -61,6 +61,9 @@ export default function ActivityModal({
     end_date: ''
   })
 
+  // Track which training type we've already applied defaults for (prevents loops)
+  const appliedDefaultsForType = useRef(null)
+
   // Update form when activity changes
   useEffect(() => {
     if (activity) {
@@ -78,33 +81,47 @@ export default function ActivityModal({
     }
   }, [activity, date])
 
-  // When training type changes, set defaults
+  // When training type changes, set defaults (only for NEW activities)
   useEffect(() => {
-    if (formData.training_type_id && !selectedActivity) {
-      const type = trainingTypes.find(t => t.id === formData.training_type_id)
-      if (type) {
-        setFormData(prev => ({
-          ...prev,
-          trainer_id: prev.trainer_id || type.default_trainer_id || '',
-          hours: prev.hours || type.default_hours || ''
-        }))
-      }
+    // Skip if editing existing activity or if we've already applied defaults for this type
+    if (activity || !formData.training_type_id) return
+    if (appliedDefaultsForType.current === formData.training_type_id) return
+    
+    const type = trainingTypes.find(t => t.id === formData.training_type_id)
+    if (type) {
+      appliedDefaultsForType.current = formData.training_type_id
+      setFormData(prev => ({
+        ...prev,
+        trainer_id: prev.trainer_id || type.default_trainer_id || '',
+        hours: prev.hours || type.default_hours || ''
+      }))
     }
-  }, [formData.training_type_id, trainingTypes, selectedActivity])
+  }, [formData.training_type_id, trainingTypes, activity])
 
-  // Generate preview dates when recurring options change
+  // Generate preview dates when recurring options change (only relevant in recurring mode)
   useEffect(() => {
-    if (onPreviewDates && isRecurring && formData.weekdays.length > 0 && currentDate) {
+    if (!onPreviewDates || !isRecurring) return
+    
+    if (formData.weekdays.length > 0 && currentDate) {
       const previewDates = generatePreviewDates(
         formData.weekdays, 
         currentDate, 
         formData.end_date || null
       )
       onPreviewDates(previewDates, formData.training_type_id)
-    } else if (onPreviewDates) {
+    } else {
       onPreviewDates([], null)
     }
   }, [isRecurring, formData.weekdays, currentDate, formData.end_date, formData.training_type_id, onPreviewDates])
+  
+  // Clear preview dates when modal closes or exits recurring mode
+  useEffect(() => {
+    return () => {
+      if (onPreviewDates) {
+        onPreviewDates([], null)
+      }
+    }
+  }, [onPreviewDates])
 
   // Preview dates count for display
   const previewDatesCount = useMemo(() => {
