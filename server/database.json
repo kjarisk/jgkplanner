@@ -2322,5 +2322,98 @@
       "date": "2026-03-15",
       "created_at": "2025-12-09T10:56:53.333Z"
     }
-  ]
+  ],
+  "budget_sections": [
+    {
+      "id": "fa86bd0c-9504-4506-9d24-5b15def7c623",
+      "year": 2025,
+      "name": "Trening",
+      "color": "#14b8a6",
+      "type": "auto",
+      "order": 0,
+      "created_at": "2025-12-09T12:39:53.255Z"
+    },
+    {
+      "id": "a59e3226-bb8b-4f63-8069-1bacefc3e6d3",
+      "year": 2025,
+      "name": "Konkurranser",
+      "color": "#f59e0b",
+      "type": "manual",
+      "order": 1,
+      "created_at": "2025-12-09T12:39:53.255Z"
+    },
+    {
+      "id": "2b4326c8-085a-40cd-a399-fa118f220d60",
+      "year": 2025,
+      "name": "Utstyr",
+      "color": "#ef4444",
+      "type": "manual",
+      "order": 2,
+      "created_at": "2025-12-09T12:39:53.255Z"
+    },
+    {
+      "id": "1c848b68-3a04-415b-9118-7f86ab508824",
+      "year": 2025,
+      "name": "Utdanning",
+      "color": "#8b5cf6",
+      "type": "manual",
+      "order": 3,
+      "created_at": "2025-12-09T12:39:53.255Z"
+    },
+    {
+      "id": "85c1e1e8-fcda-48cf-8861-67b9ae1edcff",
+      "year": 2025,
+      "name": "Annet",
+      "color": "#6b7280",
+      "type": "manual",
+      "order": 4,
+      "created_at": "2025-12-09T12:39:53.255Z"
+    },
+    {
+      "id": "c5c729b0-b077-47f9-aa35-d9452b9f7625",
+      "year": 2026,
+      "name": "Trening",
+      "color": "#14b8a6",
+      "type": "auto",
+      "order": 0,
+      "created_at": "2025-12-09T12:40:04.468Z"
+    },
+    {
+      "id": "0d21b28e-d3d5-4c4a-934e-6750c0c9588a",
+      "year": 2026,
+      "name": "Konkurranser",
+      "color": "#f59e0b",
+      "type": "manual",
+      "order": 1,
+      "created_at": "2025-12-09T12:40:04.468Z"
+    },
+    {
+      "id": "4216ee53-61b6-4bc1-b873-fe1f68c53632",
+      "year": 2026,
+      "name": "Utstyr",
+      "color": "#ef4444",
+      "type": "manual",
+      "order": 2,
+      "created_at": "2025-12-09T12:40:04.468Z"
+    },
+    {
+      "id": "a76fd01a-80ac-4efe-948b-06b858b25f95",
+      "year": 2026,
+      "name": "Utdanning",
+      "color": "#8b5cf6",
+      "type": "manual",
+      "order": 3,
+      "created_at": "2025-12-09T12:40:04.468Z"
+    },
+    {
+      "id": "f932f4b8-f489-41f4-954e-35b39bed9906",
+      "year": 2026,
+      "name": "Annet",
+      "color": "#6b7280",
+      "type": "manual",
+      "order": 4,
+      "created_at": "2025-12-09T12:40:04.468Z"
+    }
+  ],
+  "budget_costs": []
 }

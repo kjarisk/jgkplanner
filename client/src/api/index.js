@@ -94,11 +94,46 @@ export const api = {
   },
 
   budget: {
+    // Budget settings
     get: (year) => fetchApi(`/budget/${year}`),
     set: (year, data) => fetchApi(`/budget/${year}`, {
       method: 'PUT',
       body: JSON.stringify(data)
     }),
+    
+    // Full budget report
+    getReport: (year) => fetchApi(`/budget/${year}/report`),
+    
+    // Sections
+    getSections: (year) => fetchApi(`/budget/${year}/sections`),
+    createSection: (year, data) => fetchApi(`/budget/${year}/sections`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    updateSection: (id, data) => fetchApi(`/budget/sections/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+    deleteSection: (id, deleteCosts = false) => 
+      fetchApi(`/budget/sections/${id}?deleteCosts=${deleteCosts}`, { method: 'DELETE' }),
+    
+    // Manual costs
+    getCosts: (year) => fetchApi(`/budget/${year}/costs`),
+    createCost: (data) => fetchApi('/budget/costs', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    createCostsBulk: (costs) => fetchApi('/budget/costs/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ costs })
+    }),
+    updateCost: (id, data) => fetchApi(`/budget/costs/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+    deleteCost: (id) => fetchApi(`/budget/costs/${id}`, { method: 'DELETE' }),
+    
+    // Income
     addIncome: (data) => fetchApi('/budget/income', {
       method: 'POST',
       body: JSON.stringify(data)

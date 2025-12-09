@@ -8,7 +8,6 @@ import Sidebar from '../components/Sidebar'
 import Calendar from '../components/Calendar'
 import ActivityModal from '../components/ActivityModal'
 import TrainingTypeModal from '../components/TrainingTypeModal'
-import BudgetSummary from '../components/BudgetSummary'
 import UpcomingTrainings from '../components/UpcomingTrainings'
 import BottomSheet from '../components/BottomSheet'
 
@@ -48,7 +47,6 @@ export default function Dashboard() {
     mode: 'add'
   })
   const [typeModal, setTypeModal] = useState({ open: false, type: null })
-  const [showBudget, setShowBudget] = useState(false)
 
   // Keyboard navigation
   useEffect(() => {
@@ -310,7 +308,6 @@ export default function Dashboard() {
           trainingTypes={trainingTypes}
           onAddType={() => setTypeModal({ open: true, type: null })}
           onEditType={(type) => setTypeModal({ open: true, type })}
-          onShowBudget={() => setShowBudget(true)}
           isAdmin={isAdmin}
           canEdit={canEdit}
         />
@@ -450,15 +447,6 @@ export default function Dashboard() {
           trainers={trainers}
           onClose={() => setTypeModal({ open: false, type: null })}
           onSaved={handleTypeSaved}
-        />
-      )}
-
-      {/* Budget Summary */}
-      {showBudget && isAdmin && (
-        <BudgetSummary
-          year={year}
-          activities={activities}
-          onClose={() => setShowBudget(false)}
         />
       )}
 
