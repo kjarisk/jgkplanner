@@ -72,6 +72,7 @@ export const api = {
   activities: {
     getByYear: (year) => fetchApi(`/activities/year/${year}`),
     getByDate: (date) => fetchApi(`/activities/date/${date}`),
+    getRoadmap: (year) => fetchApi(`/activities/roadmap/${year}`),
     create: (data) => fetchApi('/activities', {
       method: 'POST',
       body: JSON.stringify(data)

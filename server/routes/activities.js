@@ -396,6 +396,133 @@ function calculateActivityCost(activity, trainers) {
   }, 0)
 }
 
+// Get roadmap data for a year - aggregated by week
+router.get('/roadmap/:year', authenticateToken, async (req, res) => {
+  try {
+    const { year } = req.params
+    const startDate = `${year}-01-01`
+    const endDate = `${year}-12-31`
+
+    await db.read()
+
+    const yearActivities = db.data.activities.filter(
+      a => a.date >= startDate && a.date <= endDate && !a.is_deleted
+    )
+
+    // Helper to get ISO week number
+    function getWeekNumber(dateStr) {
+      const d = new Date(dateStr)
+      const utc = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+      const dayNum = utc.getUTCDay() || 7
+      utc.setUTCDate(utc.getUTCDate() + 4 - dayNum)
+      const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1))
+      return Math.ceil((((utc - yearStart) / 86400000) + 1) / 7)
+    }
+
+    // Build week data for each activity
+    const activityWeeks = yearActivities.map(a => ({
+      ...a,
+      week: getWeekNumber(a.date),
+      month: new Date(a.date).getMonth()
+    }))
+
+    // Aggregate by training type
+    const byTypeMap = {}
+    activityWeeks.forEach(a => {
+      const type = db.data.training_types.find(t => t.id === a.training_type_id)
+      if (!type) return
+
+      if (!byTypeMap[a.training_type_id]) {
+        byTypeMap[a.training_type_id] = {
+          id: a.training_type_id,
+          name: type.name,
+          color: type.color,
+          weeks: new Set(),
+          activities: []
+        }
+      }
+      byTypeMap[a.training_type_id].weeks.add(a.week)
+      byTypeMap[a.training_type_id].activities.push({
+        id: a.id,
+        date: a.date,
+        week: a.week,
+        hours: a.hours,
+        start_time: a.start_time,
+        notes: a.notes
+      })
+    })
+
+    // Convert Sets to arrays and sort
+    const byType = Object.values(byTypeMap).map(item => ({
+      ...item,
+      weeks: Array.from(item.weeks).sort((a, b) => a - b),
+      activities: item.activities.sort((a, b) => a.date.localeCompare(b.date))
+    })).sort((a, b) => a.name.localeCompare(b.name))
+
+    // Aggregate by trainer
+    const byTrainerMap = {}
+    activityWeeks.forEach(a => {
+      const trainerIds = a.trainer_ids || (a.trainer_id ? [a.trainer_id] : [])
+      if (trainerIds.length === 0) return
+
+      const type = db.data.training_types.find(t => t.id === a.training_type_id)
+
+      trainerIds.forEach(trainerId => {
+        const trainer = db.data.trainers.find(t => t.id === trainerId)
+        if (!trainer) return
+
+        if (!byTrainerMap[trainerId]) {
+          byTrainerMap[trainerId] = {
+            id: trainerId,
+            name: trainer.name,
+            weeks: new Set(),
+            activities: []
+          }
+        }
+        byTrainerMap[trainerId].weeks.add(a.week)
+        byTrainerMap[trainerId].activities.push({
+          id: a.id,
+          date: a.date,
+          week: a.week,
+          hours: a.hours,
+          start_time: a.start_time,
+          type_name: type?.name || 'Unknown',
+          type_color: type?.color || '#gray',
+          notes: a.notes
+        })
+      })
+    })
+
+    // Convert Sets to arrays and sort
+    const byTrainer = Object.values(byTrainerMap).map(item => ({
+      ...item,
+      weeks: Array.from(item.weeks).sort((a, b) => a - b),
+      activities: item.activities.sort((a, b) => a.date.localeCompare(b.date))
+    })).sort((a, b) => a.name.localeCompare(b.name))
+
+    // Calculate week ranges for each period
+    // Q1: Week 1-13 (Jan-Mar), Q2: Week 14-26 (Apr-Jun), 
+    // Vacation: Week 27-31 (Jul), Q3: Week 32-39 (Aug-Sep), Q4: Week 40-52 (Oct-Dec)
+    const periods = [
+      { name: 'Vintertrening', startWeek: 1, endWeek: 13, months: 'Jan - Mar' },
+      { name: 'Vår', startWeek: 14, endWeek: 26, months: 'Apr - Jun' },
+      { name: 'Ferie', startWeek: 27, endWeek: 31, months: 'Jul', isVacation: true },
+      { name: 'Høst', startWeek: 32, endWeek: 39, months: 'Aug - Sep' },
+      { name: 'Sesongavslutning', startWeek: 40, endWeek: 52, months: 'Okt - Des' }
+    ]
+
+    res.json({
+      year: parseInt(year),
+      periods,
+      byType,
+      byTrainer,
+      totalWeeks: 52
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Get budget summary for a year (admin only)
 router.get('/budget/:year', authenticateToken, adminOnly, async (req, res) => {
   try {

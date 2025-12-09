@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Admin from './pages/Admin'
 import Budget from './pages/Budget'
+import Roadmap from './pages/Roadmap'
 
 function ProtectedRoute({ children, requiredRole }) {
   const { user, loading } = useAuth()
@@ -44,6 +45,14 @@ function App() {
         element={
           <ProtectedRoute requiredRole="admin">
             <Budget />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/roadmap/:year?" 
+        element={
+          <ProtectedRoute>
+            <Roadmap />
           </ProtectedRoute>
         } 
       />
