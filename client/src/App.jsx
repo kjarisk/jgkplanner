@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Admin from './pages/Admin'
 import Budget from './pages/Budget'
 import Roadmap from './pages/Roadmap'
+import Packages from './pages/Packages'
 
 function ProtectedRoute({ children, requiredRole }) {
   const { user, loading } = useAuth()
@@ -53,6 +54,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Roadmap />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/tilbud" 
+        element={
+          <ProtectedRoute>
+            <Packages />
           </ProtectedRoute>
         } 
       />

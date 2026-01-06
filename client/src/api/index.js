@@ -152,5 +152,23 @@ export const api = {
     markRead: (id) => fetchApi(`/notifications/${id}/read`, { method: 'PATCH' }),
     markAllRead: () => fetchApi('/notifications/mark-all-read', { method: 'POST' }),
     delete: (id) => fetchApi(`/notifications/${id}`, { method: 'DELETE' })
+  },
+
+  packages: {
+    list: () => fetchApi('/packages'),
+    get: (id) => fetchApi(`/packages/${id}`),
+    create: (data) => fetchApi('/packages', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    update: (id, data) => fetchApi(`/packages/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+    delete: (id) => fetchApi(`/packages/${id}`, { method: 'DELETE' }),
+    reorder: (order) => fetchApi('/packages/reorder', {
+      method: 'POST',
+      body: JSON.stringify({ order })
+    })
   }
 }

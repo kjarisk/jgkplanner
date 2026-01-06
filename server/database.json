@@ -7,7 +7,7 @@
       "avatar_url": null,
       "provider": "dev",
       "provider_id": "dev-123",
-      "role": "trainer",
+      "role": "admin",
       "created_at": "2025-12-05T11:34:41.691Z"
     }
   ],
@@ -3843,7 +3843,7 @@
   ],
   "packages": [
     {
-      "id": "9efbfffe-11b5-4f1b-95b2-60c186d2f4bb",
+      "id": "1c61a8f1-5e38-4d1a-97c0-a9a1f51e3822",
       "name": "Junior Vintertrening",
       "description": "Innendørs trening i simulatorhuset gjennom vinteren. Perfekt for å holde formen oppe når det er kaldt ute.",
       "price": 600,
@@ -3867,11 +3867,11 @@
       "is_featured": false,
       "sort_order": 1,
       "is_deleted": false,
-      "created_at": "2025-12-09T17:04:22.238Z",
-      "updated_at": "2025-12-09T17:04:22.238Z"
+      "created_at": "2026-01-06T15:21:09.181Z",
+      "updated_at": "2026-01-06T15:21:09.181Z"
     },
     {
-      "id": "38c22698-0a0b-4ff7-8536-f8dccdd40edb",
+      "id": "a672951b-2997-48da-aa3e-e0d51d911630",
       "name": "Junior Sommer",
       "description": "Sommertrening med onsdagstrening og fredags banespill (turnering). Perfekt for å utvikle spillet ditt i sommersesongen.",
       "price": 400,
@@ -3894,11 +3894,11 @@
       "is_featured": false,
       "sort_order": 2,
       "is_deleted": false,
-      "created_at": "2025-12-09T17:04:22.238Z",
-      "updated_at": "2025-12-09T17:04:22.238Z"
+      "created_at": "2026-01-06T15:21:09.181Z",
+      "updated_at": "2026-01-06T15:21:09.181Z"
     },
     {
-      "id": "e08b13ad-fa83-4738-92a4-4538e95f73ae",
+      "id": "0b1f8d95-b4a4-49f9-90a1-56b8f39e2a18",
       "name": "Junior Helårspakke",
       "description": "Den komplette pakken for seriøse juniorspillere. Inkluderer sommer, høst og vinter - alt du trenger for å bli bedre hele året.",
       "price": 2000,
@@ -3917,20 +3917,19 @@
         "Sommerpakken inkludert",
         "Tilgang til alle tema-treninger",
         "20% rabatt på ballmaskinen",
-        "Høst- og vintertrening inkludert"
+        "Høst- og vintertrening inkludert",
+        "Alt innhold fra sommerpakken"
       ],
-      "requirements": [
-        "Krever simulator medlemskap"
-      ],
+      "requirements": [],
       "period": "Sommer / Høst / Vinter",
       "is_featured": true,
       "sort_order": 3,
       "is_deleted": false,
-      "created_at": "2025-12-09T17:04:22.238Z",
-      "updated_at": "2025-12-09T17:08:18.388Z"
+      "created_at": "2026-01-06T15:21:09.181Z",
+      "updated_at": "2026-01-06T15:21:09.181Z"
     },
     {
-      "id": "c21e045f-e90d-4411-9905-9ce02f433768",
+      "id": "8ef445d8-5d88-4c0e-b260-8ed3741d3bdc",
       "name": "Fredagstrening",
       "description": "Temabasert trening med fokus på kortspill. Perfekt for å forbedre putting, chipping, pitching og bunkerslag.",
       "price": 1000,
@@ -3955,11 +3954,11 @@
       "is_featured": true,
       "sort_order": 1,
       "is_deleted": false,
-      "created_at": "2025-12-09T17:04:22.238Z",
-      "updated_at": "2025-12-09T17:04:22.238Z"
+      "created_at": "2026-01-06T15:21:09.181Z",
+      "updated_at": "2026-01-06T15:21:09.181Z"
     },
     {
-      "id": "10144e0f-a1c1-4ef5-912b-b4032dfe4c72",
+      "id": "7d341559-c624-48dc-b0ec-6c694ba182aa",
       "name": "Nybegynner-pakke",
       "description": "Perfekt startpakke for de som er nye i golf. Få profesjonell veiledning og spill dine første runder med en trener.",
       "price": 1000,
@@ -3981,11 +3980,11 @@
       "is_featured": false,
       "sort_order": 1,
       "is_deleted": false,
-      "created_at": "2025-12-09T17:04:22.238Z",
-      "updated_at": "2025-12-09T17:04:22.238Z"
+      "created_at": "2026-01-06T15:21:09.181Z",
+      "updated_at": "2026-01-06T15:21:09.181Z"
     },
     {
-      "id": "f116b776-61e6-43b2-a682-d10ed6f21577",
+      "id": "c002e1c6-6a6a-47f9-9f8c-86ad13190cac",
       "name": "Mandagstrening",
       "description": "Gratis trening for alle! Juniorene starter kl. 17:00 og voksne fra 18:00-19:00.",
       "price": 0,
@@ -4008,62 +4007,8 @@
       "is_featured": false,
       "sort_order": 1,
       "is_deleted": false,
-      "created_at": "2025-12-09T17:04:22.238Z",
-      "updated_at": "2025-12-09T17:04:22.238Z"
-    },
-    {
-      "id": "c093a20c-6b2d-448d-9a3e-f68bc010d7e9",
-      "name": "VTG-kurs",
-      "description": "",
-      "price": 895,
-      "category": "alle",
-      "trainer_ids": [
-        "d16fb858-4ae1-48f7-883f-6aaf155958b1",
-        "555251b3-2592-40c3-9d33-50715e3f86d6"
-      ],
-      "training_type_ids": [
-        "8d69eff6-b3b2-4ebb-91b7-b005d20708ed",
-        "76a013bf-1cc5-45b7-a689-e6183f91eb87"
-      ],
-      "perks": [
-        "Teoridelen gjennomføres som e- læring over ca 2 timer, nettbasert.",
-        "Praktisk del 1 gir en generell innføring over 2 økter (2+4 =6 t) praktisk trening i gruppe, med PGA instruktør",
-        "Praktisk del 2 – To ganger med spill på bane, med veileder ca.2×2 timer",
-        "Kurshelgen: Fredag kl.16-18 og Lørdag kl.10-14",
-        "Pris: 895,- * 400 kr av Beløpet trekkes fra ved kjøp av medlemskap i Jæren GK det året du gjennomfører kurset"
-      ],
-      "requirements": [],
-      "period": "Mars - September",
-      "is_featured": false,
-      "sort_order": 0,
-      "is_deleted": false,
-      "created_at": "2025-12-09T17:56:31.869Z",
-      "updated_at": "2025-12-09T17:56:31.869Z"
-    },
-    {
-      "id": "9db59f27-3b0d-44fd-a864-28aa06fbfae4",
-      "name": "afasfsdf",
-      "description": "aafsdf",
-      "price": 895,
-      "category": "alle",
-      "trainer_ids": [
-        "f9be6c95-c85e-4505-9424-bdca46423fa4"
-      ],
-      "training_type_ids": [
-        "c86debd0-904c-4141-b1e6-26f802a9eb9e"
-      ],
-      "perks": [
-        "asdfasf"
-      ],
-      "requirements": [
-        "need to know golf"
-      ],
-      "period": "",
-      "is_featured": false,
-      "sort_order": 0,
-      "is_deleted": true,
-      "created_at": "2025-12-10T13:59:32.300Z",
-      "updated_at": "2025-12-10T13:59:42.741Z"
+      "created_at": "2026-01-06T15:21:09.181Z",
+      "updated_at": "2026-01-06T15:21:09.181Z"
     }
   ]
 }

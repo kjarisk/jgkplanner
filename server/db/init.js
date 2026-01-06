@@ -18,7 +18,8 @@ const defaultData = {
   activities: [],
   notifications: [],
   budgets: [],
-  income_entries: []
+  income_entries: [],
+  packages: []
 }
 
 // Create adapter and db instance
@@ -42,6 +43,7 @@ export async function initDatabase() {
   db.data.notifications = db.data.notifications || []
   db.data.budgets = db.data.budgets || []
   db.data.income_entries = db.data.income_entries || []
+  db.data.packages = db.data.packages || []
   
   await db.write()
   console.log('Database initialized successfully')
