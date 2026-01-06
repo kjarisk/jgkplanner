@@ -7,7 +7,7 @@
       "avatar_url": null,
       "provider": "dev",
       "provider_id": "dev-123",
-      "role": "admin",
+      "role": "trainer",
       "created_at": "2025-12-05T11:34:41.691Z"
     }
   ],
@@ -59,7 +59,7 @@
   "training_types": [
     {
       "id": "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
-      "name": "Junior 11-13",
+      "name": "Junior rekrutt",
       "color": "#8B5CF6",
       "default_trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
       "default_hours": 2,
@@ -67,7 +67,7 @@
     },
     {
       "id": "c52f62f6-ed42-4f3d-9745-3d2cf2c4e52c",
-      "name": "Junior 14-19",
+      "name": "Junior Elite",
       "color": "#8B5CF6",
       "default_trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
       "default_hours": 2,
@@ -3424,9 +3424,9 @@
     {
       "id": "696b60d7-0aaf-40f5-a693-28b256e9c659",
       "year": 2026,
-      "planned_budget": 450000,
+      "planned_budget": 470000,
       "created_at": "2025-12-05T14:42:21.193Z",
-      "updated_at": "2025-12-09T13:30:11.800Z"
+      "updated_at": "2025-12-09T18:06:30.806Z"
     }
   ],
   "income_entries": [
@@ -3632,15 +3632,15 @@
       "section_id": "0d21b28e-d3d5-4c4a-934e-6750c0c9588a",
       "description": "Junior NM",
       "units": 1,
-      "unit_cost": 30000,
-      "total": 30000,
+      "unit_cost": 35000,
+      "total": 35000,
       "is_planned": true,
       "training_type_id": null,
       "trainer_id": null,
       "notes": "Kan være mindre, er litt hvor de skal reise",
       "order": 0,
       "created_at": "2025-12-09T13:16:04.579Z",
-      "updated_at": "2025-12-09T16:03:47.866Z"
+      "updated_at": "2025-12-10T16:23:42.736Z"
     },
     {
       "id": "c0a57418-fb7b-4561-a552-3a890a38ddc3",
@@ -3809,6 +3809,261 @@
       "order": 2,
       "created_at": "2025-12-09T13:26:16.392Z",
       "updated_at": "2025-12-09T15:55:12.455Z"
+    },
+    {
+      "id": "ac636453-778a-4198-b0ce-73384e74f37c",
+      "year": 2026,
+      "section_id": "f932f4b8-f489-41f4-954e-35b39bed9906",
+      "description": "T-short til NM-lag, Salg ",
+      "units": 600,
+      "unit_cost": 40,
+      "total": 24000,
+      "is_planned": true,
+      "training_type_id": null,
+      "trainer_id": null,
+      "notes": "Jæren Golfklubb logo - Callaway / Foot Joy / Tilbud",
+      "order": 3,
+      "created_at": "2025-12-09T18:06:15.923Z"
+    },
+    {
+      "id": "2d783717-1fe2-4973-a0dd-dce3c044e4b7",
+      "year": 2026,
+      "section_id": "0d21b28e-d3d5-4c4a-934e-6750c0c9588a",
+      "description": "NM junior Andreas",
+      "units": 3,
+      "unit_cost": 3500,
+      "total": 10500,
+      "is_planned": true,
+      "training_type_id": "c52f62f6-ed42-4f3d-9745-3d2cf2c4e52c",
+      "trainer_id": "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+      "notes": "NM lag",
+      "order": 2,
+      "created_at": "2025-12-10T16:25:02.151Z"
+    }
+  ],
+  "packages": [
+    {
+      "id": "9efbfffe-11b5-4f1b-95b2-60c186d2f4bb",
+      "name": "Junior Vintertrening",
+      "description": "Innendørs trening i simulatorhuset gjennom vinteren. Perfekt for å holde formen oppe når det er kaldt ute.",
+      "price": 600,
+      "category": "junior",
+      "trainer_ids": [
+        "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+        "d16fb858-4ae1-48f7-883f-6aaf155958b1"
+      ],
+      "training_type_ids": [
+        "c86debd0-904c-4141-b1e6-26f802a9eb9e"
+      ],
+      "perks": [
+        "Innendørs trening i simulatorhuset",
+        "Profesjonell veiledning",
+        "Tilgang til alle vinterøkter"
+      ],
+      "requirements": [
+        "Krever simulator medlemskap"
+      ],
+      "period": "Januar - Mars",
+      "is_featured": false,
+      "sort_order": 1,
+      "is_deleted": false,
+      "created_at": "2025-12-09T17:04:22.238Z",
+      "updated_at": "2025-12-09T17:04:22.238Z"
+    },
+    {
+      "id": "38c22698-0a0b-4ff7-8536-f8dccdd40edb",
+      "name": "Junior Sommer",
+      "description": "Sommertrening med onsdagstrening og fredags banespill (turnering). Perfekt for å utvikle spillet ditt i sommersesongen.",
+      "price": 400,
+      "category": "junior",
+      "trainer_ids": [
+        "268c81b2-40d7-4da5-9a0b-e16e546730a9"
+      ],
+      "training_type_ids": [
+        "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+        "c52f62f6-ed42-4f3d-9745-3d2cf2c4e52c",
+        "fd8dfab7-85da-4657-81d5-dbbe782edfd3"
+      ],
+      "perks": [
+        "Onsdagstrening hver uke",
+        "Fredags banespill (turnering)",
+        "Utendørs trening på banen"
+      ],
+      "requirements": [],
+      "period": "Sommer",
+      "is_featured": false,
+      "sort_order": 2,
+      "is_deleted": false,
+      "created_at": "2025-12-09T17:04:22.238Z",
+      "updated_at": "2025-12-09T17:04:22.238Z"
+    },
+    {
+      "id": "e08b13ad-fa83-4738-92a4-4538e95f73ae",
+      "name": "Junior Helårspakke",
+      "description": "Den komplette pakken for seriøse juniorspillere. Inkluderer sommer, høst og vinter - alt du trenger for å bli bedre hele året.",
+      "price": 2000,
+      "category": "junior",
+      "trainer_ids": [
+        "268c81b2-40d7-4da5-9a0b-e16e546730a9",
+        "d16fb858-4ae1-48f7-883f-6aaf155958b1"
+      ],
+      "training_type_ids": [
+        "dad5e0cd-960a-4d6d-9c07-1c6ce304f713",
+        "c52f62f6-ed42-4f3d-9745-3d2cf2c4e52c",
+        "c86debd0-904c-4141-b1e6-26f802a9eb9e",
+        "fd8dfab7-85da-4657-81d5-dbbe782edfd3"
+      ],
+      "perks": [
+        "Sommerpakken inkludert",
+        "Tilgang til alle tema-treninger",
+        "20% rabatt på ballmaskinen",
+        "Høst- og vintertrening inkludert"
+      ],
+      "requirements": [
+        "Krever simulator medlemskap"
+      ],
+      "period": "Sommer / Høst / Vinter",
+      "is_featured": true,
+      "sort_order": 3,
+      "is_deleted": false,
+      "created_at": "2025-12-09T17:04:22.238Z",
+      "updated_at": "2025-12-09T17:08:18.388Z"
+    },
+    {
+      "id": "c21e045f-e90d-4411-9905-9ce02f433768",
+      "name": "Fredagstrening",
+      "description": "Temabasert trening med fokus på kortspill. Perfekt for å forbedre putting, chipping, pitching og bunkerslag.",
+      "price": 1000,
+      "category": "voksen",
+      "trainer_ids": [
+        "d16fb858-4ae1-48f7-883f-6aaf155958b1"
+      ],
+      "training_type_ids": [
+        "915464c6-33ab-43db-b101-7c11cc9eda4c"
+      ],
+      "perks": [
+        "Ca. 10 treningsøkter før sommeren",
+        "Tema: Putting",
+        "Tema: Chipping",
+        "Tema: Pitching",
+        "Tema: Bunkerslag",
+        "Tema: Kortspill strategi",
+        "Drop-in på alle økter"
+      ],
+      "requirements": [],
+      "period": "Før sommeren",
+      "is_featured": true,
+      "sort_order": 1,
+      "is_deleted": false,
+      "created_at": "2025-12-09T17:04:22.238Z",
+      "updated_at": "2025-12-09T17:04:22.238Z"
+    },
+    {
+      "id": "10144e0f-a1c1-4ef5-912b-b4032dfe4c72",
+      "name": "Nybegynner-pakke",
+      "description": "Perfekt startpakke for de som er nye i golf. Få profesjonell veiledning og spill dine første runder med en trener.",
+      "price": 1000,
+      "category": "alle",
+      "trainer_ids": [
+        "f9be6c95-c85e-4505-9424-bdca46423fa4",
+        "555251b3-2592-40c3-9d33-50715e3f86d6"
+      ],
+      "training_type_ids": [],
+      "perks": [
+        "2 runder på banen med trener",
+        "6 treningsøkter",
+        "Grunnleggende teknikk",
+        "Regler og etikette",
+        "Personlig oppfølging"
+      ],
+      "requirements": [],
+      "period": "Mai - Juli",
+      "is_featured": false,
+      "sort_order": 1,
+      "is_deleted": false,
+      "created_at": "2025-12-09T17:04:22.238Z",
+      "updated_at": "2025-12-09T17:04:22.238Z"
+    },
+    {
+      "id": "f116b776-61e6-43b2-a682-d10ed6f21577",
+      "name": "Mandagstrening",
+      "description": "Gratis trening for alle! Juniorene starter kl. 17:00 og voksne fra 18:00-19:00.",
+      "price": 0,
+      "category": "gratis",
+      "trainer_ids": [
+        "f9be6c95-c85e-4505-9424-bdca46423fa4"
+      ],
+      "training_type_ids": [
+        "7d945060-c284-4c30-86ad-3fe288cd7a5c"
+      ],
+      "perks": [
+        "Gratis for alle",
+        "Juniors: 17:00",
+        "Voksne: 18:00 - 19:00",
+        "Sosial trening",
+        "Alle nivåer velkommen"
+      ],
+      "requirements": [],
+      "period": "Hele året",
+      "is_featured": false,
+      "sort_order": 1,
+      "is_deleted": false,
+      "created_at": "2025-12-09T17:04:22.238Z",
+      "updated_at": "2025-12-09T17:04:22.238Z"
+    },
+    {
+      "id": "c093a20c-6b2d-448d-9a3e-f68bc010d7e9",
+      "name": "VTG-kurs",
+      "description": "",
+      "price": 895,
+      "category": "alle",
+      "trainer_ids": [
+        "d16fb858-4ae1-48f7-883f-6aaf155958b1",
+        "555251b3-2592-40c3-9d33-50715e3f86d6"
+      ],
+      "training_type_ids": [
+        "8d69eff6-b3b2-4ebb-91b7-b005d20708ed",
+        "76a013bf-1cc5-45b7-a689-e6183f91eb87"
+      ],
+      "perks": [
+        "Teoridelen gjennomføres som e- læring over ca 2 timer, nettbasert.",
+        "Praktisk del 1 gir en generell innføring over 2 økter (2+4 =6 t) praktisk trening i gruppe, med PGA instruktør",
+        "Praktisk del 2 – To ganger med spill på bane, med veileder ca.2×2 timer",
+        "Kurshelgen: Fredag kl.16-18 og Lørdag kl.10-14",
+        "Pris: 895,- * 400 kr av Beløpet trekkes fra ved kjøp av medlemskap i Jæren GK det året du gjennomfører kurset"
+      ],
+      "requirements": [],
+      "period": "Mars - September",
+      "is_featured": false,
+      "sort_order": 0,
+      "is_deleted": false,
+      "created_at": "2025-12-09T17:56:31.869Z",
+      "updated_at": "2025-12-09T17:56:31.869Z"
+    },
+    {
+      "id": "9db59f27-3b0d-44fd-a864-28aa06fbfae4",
+      "name": "afasfsdf",
+      "description": "aafsdf",
+      "price": 895,
+      "category": "alle",
+      "trainer_ids": [
+        "f9be6c95-c85e-4505-9424-bdca46423fa4"
+      ],
+      "training_type_ids": [
+        "c86debd0-904c-4141-b1e6-26f802a9eb9e"
+      ],
+      "perks": [
+        "asdfasf"
+      ],
+      "requirements": [
+        "need to know golf"
+      ],
+      "period": "",
+      "is_featured": false,
+      "sort_order": 0,
+      "is_deleted": true,
+      "created_at": "2025-12-10T13:59:32.300Z",
+      "updated_at": "2025-12-10T13:59:42.741Z"
     }
   ]
 }
